@@ -165,8 +165,6 @@ function placeStars() {
             element:  null,
         });
     });
-}
-
 /**
  * INIT DOM: Creates the <use> elements (Runs only once)
  */
