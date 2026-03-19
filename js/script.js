@@ -30,6 +30,7 @@ const WOLF_PATHS = [
   "M37.500,84.500 L24.500,99.500 L38.500,92.500 L39.500,100.500",
   "M18.500,99.500 L31.500,57.500 L38.500,72.500 L26.500,84.500"
 ];
+
 const WOLF_PATTERN = [];
 const WOLF_CONNECTIONS = [];
 let globalNodeIndex = 0;
@@ -58,8 +59,11 @@ const WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
 const WOLF_STAR_SIZE      = 5;    
 
 const stars = [];
+
+// GLOBAL VARIABLES (Properly scoped)
 let wolfOffset   = { x: 0, y: 0 };
 let wolfRevealed = false;
+let isDrawing    = false;     
 const wolfStarData = [];
 const wolfLines    = [];
 
@@ -87,16 +91,14 @@ function overlaps(candidate, existingStar) {
 /**
  * STAR PLACEMENT (Calculating Data)
  */
-/**
- * STAR PLACEMENT (Calculating Data)
- */
 function placeStars() {
     stars.length = 0;
     svg.innerHTML = '';
     wolfStarData.length = 0;
     wolfLines.length = 0;
     wolfRevealed = false;
-
+    isDrawing = false;
+    
     // Choose a random position for the wolf constellation
     const margin = 30;
     const maxX = window.innerWidth  - WOLF_PATTERN_WIDTH  - margin;
@@ -151,20 +153,7 @@ function placeStars() {
         }
     }
 }
-    // Build wolf constellation star data objects
-    WOLF_PATTERN.forEach((pt, idx) => {
-        wolfStarData.push({
-            id:       'wolf_' + idx,
-            x:        wolfOffset.x + pt.rx * WOLF_SCALE,
-            y:        wolfOffset.y + pt.ry * WOLF_SCALE,
-            size:     WOLF_STAR_SIZE,
-            rotation: 0,
-            def:      pt.def,
-            alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
-            color:    '#ffffff',
-            element:  null,
-        });
-    });
+
 /**
  * INIT DOM: Creates the <use> elements (Runs only once)
  */
@@ -195,22 +184,28 @@ function initDOM() {
         starData.element = starUse;
     });
 
-    // Constellation lines — hidden until the Wolf is revealed
+    // Constellation lines — Set to zero length initially
     WOLF_CONNECTIONS.forEach(([i, j]) => {
         const line = document.createElementNS(SVG_NS, 'line');
         const s1   = wolfStarData[i];
         const s2   = wolfStarData[j];
-        line.setAttribute('x1',           s1.x);
-        line.setAttribute('y1',           s1.y);
-        line.setAttribute('x2',           s2.x);
-        line.setAttribute('y2',           s2.y);
-        line.setAttribute('stroke',       'gold');
+        
+        line.setAttribute('x1', s1.x);
+        line.setAttribute('y1', s1.y);
+        line.setAttribute('x2', s1.x); // Start at zero length
+        line.setAttribute('y2', s1.y); // Start at zero length
+        line.setAttribute('stroke', '#ffffff'); // Pure White
         line.setAttribute('stroke-width', '0.8');
-        line.setAttribute('opacity',      '0');
+        line.setAttribute('opacity', '0');
+        
+        // Save the destination so we can animate to it later
+        line.dataset.targetX = s2.x;
+        line.dataset.targetY = s2.y;
+        
         svg.appendChild(line);
         wolfLines.push(line);
     });
-}
+} // Fixed missing bracket here!
 
 /**
  * MATH: Properly aligns, rotates, and scales the stars
@@ -226,54 +221,81 @@ function updateStarTransform(element, data) {
 }
 
 /**
- * REVEAL WOLF: Called when the user clicks inside the constellation bounding box.
+ * REVEAL WOLF: Animates lines one-by-one
  */
 function revealWolf() {
-    wolfRevealed = true;
+    if (wolfRevealed || isDrawing) return;
+    isDrawing = true;
+
+    // Instantly turn constellation stars bright white
     wolfStarData.forEach(s => {
-        s.color = 'gold';
+        s.color = '#ffffff';
         s.alpha = 1.0;
-        s.element.setAttribute('fill',    'gold');
+        s.element.setAttribute('fill', '#ffffff');
         s.element.setAttribute('opacity', '1');
     });
-    wolfLines.forEach(line => {
-        line.setAttribute('opacity', '0.7');
-    });
+
+    // Sequential drawing animation
+    function drawNextLine(index) {
+        if (index >= wolfLines.length) {
+            wolfRevealed = true;
+            isDrawing = false;
+            return;
+        }
+
+        const line = wolfLines[index];
+        line.setAttribute('opacity', '0.7'); // Make visible
+        
+        const startX = parseFloat(line.getAttribute('x1'));
+        const startY = parseFloat(line.getAttribute('y1'));
+        const targetX = parseFloat(line.dataset.targetX);
+        const targetY = parseFloat(line.dataset.targetY);
+        
+        let progress = 0;
+        const speed = 0.08; // SPEED CONTROL: Increase for faster, decrease for slower
+
+        function frame() {
+            progress += speed;
+            if (progress >= 1) {
+                // Line reached its destination, start the next one
+                line.setAttribute('x2', targetX);
+                line.setAttribute('y2', targetY);
+                drawNextLine(index + 1);
+            } else {
+                // Interpolate length
+                line.setAttribute('x2', startX + (targetX - startX) * progress);
+                line.setAttribute('y2', startY + (targetY - startY) * progress);
+                requestAnimationFrame(frame);
+            }
+        }
+        requestAnimationFrame(frame);
+    }
+
+    drawNextLine(0); // Kick off the animation
 }
 
 /**
  * ANIMATION LOOP
  */
 function animate() {
-    // Twinkle random background stars
+    // Twinkle background stars
     stars.forEach(star => {
         star.alpha = 0.5 + Math.sin(Date.now() / 300 + star.id) * 0.4;
         star.element.setAttribute('opacity', star.alpha);
         updateStarTransform(star.element, star);
     });
 
-    // Animate wolf constellation stars
-    if (!wolfRevealed) {
+    // Twinkle wolf stars ONLY before they are revealed
+    if (!wolfRevealed && !isDrawing) {
         wolfStarData.forEach((star, idx) => {
             star.alpha = 0.5 + Math.sin(Date.now() / 300 + idx * 1.3) * 0.4;
             star.element.setAttribute('opacity', star.alpha);
-        });
-    } else {
-        const pulse = 0.85 + Math.sin(Date.now() / 600) * 0.15;
-        wolfStarData.forEach(star => {
-            star.element.setAttribute('opacity', pulse);
-        });
-        wolfLines.forEach(line => {
-            line.setAttribute('opacity', pulse * 0.7);
         });
     }
 
     requestAnimationFrame(animate);
 }
 
-/**
- * INITIALIZATION
- */
 function init() {
     placeStars();
     initDOM();
@@ -293,10 +315,12 @@ function init() {
 
     animate();
 }
+
 window.addEventListener('resize', () => {
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
     svg.setAttribute('width',  window.innerWidth);
     svg.setAttribute('height', window.innerHeight);
 });
+
 console.log(`Number of stars generated: ${stars.length}`);
 init();
