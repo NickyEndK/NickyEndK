@@ -8,8 +8,8 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * CONFIGURATION CONSTANTS
  */
 const STAR_COUNT      = 200;
-const STAR_MIN_SIZE   = 5;   // Increased slightly so they are easier to see
-const STAR_MAX_SIZE   = 25;
+const STAR_MIN_SIZE   = 1;   // Increased slightly so they are easier to see
+const STAR_MAX_SIZE   = 3;
 const OVERLAP_PADDING = 4;
 const MAX_ATTEMPTS    = 100;
 const MIN_ALPHA       = 0.2;
@@ -70,13 +70,6 @@ function placeStars() {
 
             if (!stars.some(existing => overlaps(candidate, existing))) {
                 
-                // --- CUSTOMIZATION EXAMPLES ---
-                // Let's make star #5 red and huge!
-                if (i === 5) {
-                    candidate.color = '#ff3366';
-                    candidate.size = 60;
-                }
-                // Let's make 10% of the stars gold
                 else if (Math.random() > 0.9) {
                     candidate.color = '#ffd700'; 
                 }
