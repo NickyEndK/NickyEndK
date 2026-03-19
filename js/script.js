@@ -15,6 +15,12 @@ const MAX_ATTEMPTS    = 100;
 const MIN_ALPHA       = 0.2;
 const MAX_ALPHA       = 1.0;
 
+const starDefs =[
+    { id: '#star1', originalSize: 100 },
+    { id: '#star2', originalSize: 100 },
+    { id: '#star3', originalSize: 100 },
+    { id: '#star4', originalSize: 100 }
+];
 // Notice: We map each star to its ID and its original grid size!
 // Refined coordinates (0-100) based on Angel.svg silhouette
 const ANGEL_PATTERN = [
