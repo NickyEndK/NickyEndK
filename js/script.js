@@ -169,5 +169,5 @@ window.addEventListener('resize', () => {
     placeStars();
     initDOM();
 });
-
+console.log(`Number of stars generated: ${stars.length}`);
 init();
