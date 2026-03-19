@@ -75,23 +75,6 @@ const ANGEL_CONNECTIONS = [
     [17, 20], [20, 21]
 ];
 
-/**
- * Pairs of indices into ANGEL_PATTERN that are connected by lines when revealed.
- */
-const ANGEL_CONNECTIONS = [
-    [0, 1], [1, 2],         // Halo arc
-    [0, 3], [2, 3],         // Halo → head
-    [3, 5], [5, 4],         // Head → left wing
-    [3, 6], [6, 7],         // Head → right wing
-    [5, 8], [6, 9],         // Wings → shoulders
-    [8, 10], [9, 10],       // Shoulders → chest
-    [8, 11], [9, 12],       // Shoulders → arms
-    [10, 13],               // Chest → waist
-    [11, 13], [12, 13],     // Arms → waist
-    [13, 14], [13, 15],     // Waist → hips
-    [14, 16], [15, 18],     // Hips → skirt
-    [16, 17], [17, 18],     // Skirt cross
-    [16, 19], [18, 20],     // Skirt → hem
 ];
 
 const ANGEL_SCALE          = 3.5;  
