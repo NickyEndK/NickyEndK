@@ -72,7 +72,7 @@ const ANGEL_CONNECTIONS = [
   [7, 21], [21, 22], [ [22, 23],
   // Optional navel link
   [8, 24]
-];
+]
 
 const ANGEL_SCALE          = 3.8;  
 const ANGEL_STAR_SIZE      = 5;    
