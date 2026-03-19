@@ -49,7 +49,7 @@ function overlaps(candidate, existingStar) {
  */
 function placeStars() {
     stars.length = 0; 
-    svg.innerHTML = ''; // Clear SVG only once at the start
+    svg.innerHTML = '';
 
     for (let i = 0; i < STAR_COUNT; i++) {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -159,14 +159,11 @@ function init() {
     initDOM();
     animate(); // Start the animation loop!
 }
-
-// Handle resizing (Note: because we delete everything on resize, 
-// we have to re-run the place -> init setup)
 window.addEventListener('resize', () => {
-    // Optional: Stop the previous animation loop here if you encounter performance issues on rapid resize
-    svg.innerHTML = '';
-    placeStars();
-    initDOM();
+    svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    svg.setAttribute('width', window.innerWidth);
+    svg.setAttribute('height', window.innerHeight);
+
 });
 console.log(`Number of stars generated: ${stars.length}`);
 init();
