@@ -28,8 +28,7 @@ const WOLF_PATHS = [
   "M45.500,88.500 L51.500,99.500",
   "M41.500,84.500 L41.500,100.500",
   "M37.500,84.500 L24.500,99.500 L38.500,92.500 L39.500,100.500",
-  "M18.500,99.500 L31.500,57.500 L38.500,72.500 L26.500,84.500",
-  "M43.500,51.500 L37.500,53.500 L36.500,56.500 L32.500,50.500 L37.500,49.500 L38.500,46.500"
+  "M18.500,99.500 L31.500,57.500 L38.500,72.500 L26.500,84.500"
 ];
 const WOLF_PATTERN = [];
 const WOLF_CONNECTIONS = [];
@@ -88,6 +87,9 @@ function overlaps(candidate, existingStar) {
 /**
  * STAR PLACEMENT (Calculating Data)
  */
+/**
+ * STAR PLACEMENT (Calculating Data)
+ */
 function placeStars() {
     stars.length = 0;
     svg.innerHTML = '';
@@ -99,11 +101,27 @@ function placeStars() {
     const margin = 30;
     const maxX = window.innerWidth  - WOLF_PATTERN_WIDTH  - margin;
     const maxY = window.innerHeight - WOLF_PATTERN_HEIGHT - margin;
-    // Clamp so the pattern stays on-screen even on small viewports
+    
+    // Clamp so the pattern stays on-screen
     wolfOffset.x = randomBetween(margin, Math.max(margin, maxX));
     wolfOffset.y = randomBetween(margin, Math.max(margin, maxY));
 
-    // Place random background stars, skipping any that land inside the wolf bounding box
+    // 1. GENERATE THE WOLF STARS FIRST
+    WOLF_PATTERN.forEach((pt, idx) => {
+        wolfStarData.push({
+            id:       'wolf_' + idx,
+            x:        wolfOffset.x + pt.rx * WOLF_SCALE,
+            y:        wolfOffset.y + pt.ry * WOLF_SCALE,
+            size:     WOLF_STAR_SIZE,
+            rotation: 0,
+            def:      pt.def,
+            alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
+            color:    '#ffffff',
+            element:  null,
+        });
+    });
+
+    // 2. GENERATE BACKGROUND STARS EVERYWHERE ELSE
     for (let i = 0; i < STAR_COUNT; i++) {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
@@ -121,21 +139,18 @@ function placeStars() {
                 element:  null
             };
 
-            // Clear random stars from the wolf bounding box
-            const insideWolf = (
-                candidate.x + candidate.size / 2 >= wolfOffset.x &&
-                candidate.x - candidate.size / 2 <= wolfOffset.x + WOLF_PATTERN_WIDTH &&
-                candidate.y + candidate.size / 2 >= wolfOffset.y &&
-                candidate.y - candidate.size / 2 <= wolfOffset.y + WOLF_PATTERN_HEIGHT
-            );
+            // Check if it overlaps other background stars OR the wolf stars
+            const overlapsBackground = stars.some(existing => overlaps(candidate, existing));
+            const overlapsWolf = wolfStarData.some(existing => overlaps(candidate, existing));
 
-            if (!insideWolf && !stars.some(existing => overlaps(candidate, existing))) {
+            // Only place the star if the spot is completely empty
+            if (!overlapsBackground && !overlapsWolf) {
                 stars.push(candidate);
                 break;
             }
         }
     }
-
+}
     // Build wolf constellation star data objects
     WOLF_PATTERN.forEach((pt, idx) => {
         wolfStarData.push({
