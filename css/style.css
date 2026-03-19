@@ -1,0 +1,20 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    overflow: hidden; 
+    width: 100%;
+    height: 100vh;
+}
+
+/* Changed from canvas to svg */
+svg {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
