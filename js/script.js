@@ -128,15 +128,6 @@ function updateStarTransform(element, data) {
  */
 function animate() {
     stars.forEach(star => {
-        
-        // Example: Only animate the red star (#5) to spin really fast
-        if (star.id === 5) {
-            star.rotation += 2; 
-        } 
-        // Example: Make all other stars rotate slowly
-        else {
-            star.rotation += 0.2; 
-        }
 
         // Example: Make all stars twinkle (pulsating opacity)
         // We use Math.sin and the star's ID so they don't all twinkle at the exact same time
