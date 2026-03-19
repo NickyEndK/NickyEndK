@@ -84,10 +84,10 @@ function placeStars() {
     wolfRevealed = false;
     isDrawing = false;
     
-    // --- RESPONSIVE SCALING ---
+    // --- RESPONSIVE SCALING (RUNS ONLY ONCE) ---
     const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
     WOLF_SCALE = (minScreenDim * 0.5) / 110; 
-    WOLF_SCALE = Math.max(0.5, WOLF_SCALE); // Removed strict clamp 
+    WOLF_SCALE = Math.max(0.5, WOLF_SCALE); 
     WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
     WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
     
@@ -104,7 +104,7 @@ function placeStars() {
     const centerY = WOLF_PATTERN_HEIGHT / 2;
 
     WOLF_PATTERN.forEach((pt, idx) => {
-        const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE); // Wolf uses global sizes
+        const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE); 
         
         const px = pt.rx * WOLF_SCALE;
         const py = pt.ry * WOLF_SCALE;
@@ -304,14 +304,13 @@ function init() {
     animate();
 }
 
-let resizeTimeout;
+// --- NEW, LAG-FREE RESIZE LISTENER ---
 window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    
-    resizeTimeout = setTimeout(() => {
-        placeStars();
-        initDOM();
-    }, 200); 
+    // ONLY updates the container boundaries so the background doesn't get cut off.
+    // It NO LONGER recalculates or redraws the stars.
+    svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    svg.setAttribute('width',  window.innerWidth);
+    svg.setAttribute('height', window.innerHeight);
 });
 
 console.log(`Number of stars generated: ${stars.length}`);
