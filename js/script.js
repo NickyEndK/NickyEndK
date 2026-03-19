@@ -23,57 +23,56 @@ const starDefs = [
     { id: '#star4', originalSize: 100 }
 ];
 
-const stars = [];
-
-// =======================
-// ANGEL CONSTELLATION
-// =======================
-
-/**
- * Hardcoded star positions (in a 0-100 unit space) that trace the Angel SVG shape.
- * Each entry has a relative x/y (rx/ry) and which star shape to use.
- */
+// Map coordinates (0-100) to match the Angel.svg silhouette
 const ANGEL_PATTERN = [
-    // Halo (arc above head)
-    { rx: 42, ry:  3, def: { id: '#star2', originalSize: 100 } },
-    { rx: 50, ry:  0, def: { id: '#star1', originalSize: 100 } },
-    { rx: 58, ry:  3, def: { id: '#star3', originalSize: 100 } },
-    // Head
-    { rx: 50, ry: 14, def: { id: '#star4', originalSize: 100 } },
-    // Left wing outer tip
-    { rx: 10, ry: 22, def: { id: '#star1', originalSize: 100 } },
-    // Left wing inner
-    { rx: 28, ry: 20, def: { id: '#star2', originalSize: 100 } },
-    // Right wing inner
-    { rx: 70, ry: 18, def: { id: '#star3', originalSize: 100 } },
-    // Right wing outer tip
-    { rx: 84, ry: 14, def: { id: '#star4', originalSize: 100 } },
-    // Left shoulder
-    { rx: 38, ry: 28, def: { id: '#star1', originalSize: 100 } },
-    // Right shoulder
-    { rx: 64, ry: 26, def: { id: '#star2', originalSize: 100 } },
-    // Chest / neck
-    { rx: 50, ry: 37, def: { id: '#star3', originalSize: 100 } },
-    // Left arm
-    { rx: 30, ry: 44, def: { id: '#star4', originalSize: 100 } },
-    // Right arm
-    { rx: 70, ry: 42, def: { id: '#star1', originalSize: 100 } },
-    // Waist
-    { rx: 50, ry: 54, def: { id: '#star2', originalSize: 100 } },
-    // Left hip
-    { rx: 36, ry: 64, def: { id: '#star3', originalSize: 100 } },
-    // Right hip
-    { rx: 64, ry: 62, def: { id: '#star4', originalSize: 100 } },
-    // Left skirt
-    { rx: 22, ry: 80, def: { id: '#star1', originalSize: 100 } },
-    // Centre skirt
-    { rx: 50, ry: 77, def: { id: '#star2', originalSize: 100 } },
-    // Right skirt
-    { rx: 70, ry: 78, def: { id: '#star3', originalSize: 100 } },
-    // Left hem
-    { rx: 30, ry: 95, def: { id: '#star4', originalSize: 100 } },
-    // Right hem
-    { rx: 60, ry: 95, def: { id: '#star1', originalSize: 100 } },
+    // Hair / Head
+    { rx: 45, ry: 5,  def: starDefs[0] }, // 0: Top hair tuft
+    { rx: 65, ry: 12, def: starDefs[1] }, // 1: Right hair spike
+    { rx: 35, ry: 15, def: starDefs[2] }, // 2: Left hair spike
+    { rx: 50, ry: 20, def: starDefs[3] }, // 3: Face center
+    
+    // Bowtie
+    { rx: 50, ry: 28, def: starDefs[0] }, // 4: Bowtie center
+    { rx: 46, ry: 26, def: starDefs[1] }, // 5: Bowtie top-left
+    { rx: 54, ry: 30, def: starDefs[2] }, // 6: Bowtie bottom-right
+    
+    // Upper Arms (High)
+    { rx: 42, ry: 32, def: starDefs[3] }, // 7: Left upper shoulder
+    { rx: 30, ry: 45, def: starDefs[0] }, // 8: Left upper elbow
+    { rx: 20, ry: 60, def: starDefs[1] }, // 9: Left upper hand
+    { rx: 58, ry: 32, def: starDefs[2] }, // 10: Right upper shoulder
+    { rx: 65, ry: 45, def: starDefs[3] }, // 11: Right upper elbow
+    { rx: 70, ry: 60, def: starDefs[0] }, // 12: Right upper hand
+
+    // Lower Arms (Mid)
+    { rx: 45, ry: 45, def: starDefs[1] }, // 13: Left lower shoulder
+    { rx: 35, ry: 65, def: starDefs[2] }, // 14: Left lower hand
+    { rx: 55, ry: 45, def: starDefs[3] }, // 15: Right lower shoulder
+    { rx: 65, ry: 65, def: starDefs[0] }, // 16: Right lower hand
+
+    // Torso & Legs
+    { rx: 50, ry: 55, def: starDefs[1] }, // 17: Waist
+    { rx: 45, ry: 75, def: starDefs[2] }, // 18: Left knee
+    { rx: 40, ry: 95, def: starDefs[3] }, // 19: Left foot
+    { rx: 55, ry: 75, def: starDefs[0] }, // 20: Right knee
+    { rx: 60, ry: 95, def: starDefs[1] }  // 21: Right foot
+];
+
+const ANGEL_CONNECTIONS = [
+    // Head & Hair
+    [0, 1], [0, 2], [1, 3], [2, 3],
+    // Bowtie
+    [3, 4], [4, 5], [4, 6], [5, 6],
+    // Upper Arms
+    [4, 7], [7, 8], [8, 9],
+    [4, 10], [10, 11], [11, 12],
+    // Lower Arms
+    [17, 13], [13, 14],
+    [17, 15], [15, 16],
+    // Body & Legs
+    [4, 17],
+    [17, 18], [18, 19],
+    [17, 20], [20, 21]
 ];
 
 /**
@@ -95,12 +94,10 @@ const ANGEL_CONNECTIONS = [
     [16, 19], [18, 20],     // Skirt → hem
 ];
 
-const ANGEL_SCALE          = 2.2;  // Scale pattern units → pixels
-const ANGEL_STAR_SIZE      = 7;    // Pixel size for each constellation star
-// 84 = max rx in ANGEL_PATTERN, 95 = max ry in ANGEL_PATTERN
-const ANGEL_PATTERN_WIDTH  = 84 * ANGEL_SCALE;
-const ANGEL_PATTERN_HEIGHT = 95 * ANGEL_SCALE;
-
+const ANGEL_SCALE          = 3.5;  
+const ANGEL_STAR_SIZE      = 6;    
+const ANGEL_PATTERN_WIDTH  = 70 * ANGEL_SCALE; 
+const ANGEL_PATTERN_HEIGHT = 100 * ANGEL_SCALE;
 let angelOffset   = { x: 0, y: 0 };
 let angelRevealed = false;
 const angelStarData = [];
