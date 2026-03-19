@@ -8,8 +8,8 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * CONFIGURATION CONSTANTS
  */
 const STAR_COUNT      = 200;
-const STAR_MIN_SIZE   = 5;   
-const STAR_MAX_SIZE   = 10;
+const STAR_MIN_SIZE   = 3;   
+const STAR_MAX_SIZE   = 6;
 const OVERLAP_PADDING = 2; // Reduced padding for a tighter, more natural look
 const MAX_ATTEMPTS    = 100;
 const MIN_ALPHA       = 0.2;
@@ -93,7 +93,7 @@ function placeStars() {
     
     const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
     // Slightly increased scale to give the tight angel coords more room
-    WOLF_SCALE = (minScreenDim * 0.55) / 110; 
+    WOLF_SCALE = (minScreenDim * 0.75) / 110; 
     WOLF_SCALE = Math.max(0.5, WOLF_SCALE); 
     WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
     WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
