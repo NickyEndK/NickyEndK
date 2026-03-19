@@ -98,19 +98,41 @@ function placeStars() {
     wolfOffset.x = randomBetween(margin, Math.max(margin, maxX));
     wolfOffset.y = randomBetween(margin, Math.max(margin, maxY));
 
+    // --- NEW: Random Rotation Math ---
+    // Generate a random angle between 0 and 360 degrees (in radians)
+    const wolfAngle = randomBetween(0, Math.PI * 2);
+    
+    // Find the exact center of the constellation
+    const centerX = WOLF_PATTERN_WIDTH / 2;
+    const centerY = WOLF_PATTERN_HEIGHT / 2;
+
     WOLF_PATTERN.forEach((pt, idx) => {
-        const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE); // Wolf uses global sizes now
+        const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE); // Wolf uses global sizes
+        
+        // Find where the star normally sits relative to the top-left
+        const px = pt.rx * WOLF_SCALE;
+        const py = pt.ry * WOLF_SCALE;
+
+        // Calculate the distance from the center
+        const dx = px - centerX;
+        const dy = py - centerY;
+        
+        // Orbit the point around the center using Trigonometry
+        const rotatedX = dx * Math.cos(wolfAngle) - dy * Math.sin(wolfAngle);
+        const rotatedY = dx * Math.sin(wolfAngle) + dy * Math.cos(wolfAngle);
+
         wolfStarData.push({
             id:       'wolf_' + idx,
-            x:        wolfOffset.x + pt.rx * WOLF_SCALE,
-            y:        wolfOffset.y + pt.ry * WOLF_SCALE,
+            x:        wolfOffset.x + centerX + rotatedX,
+            y:        wolfOffset.y + centerY + rotatedY,
             size:     size,
-            rotation: randomBetween(0, 360),
+            rotation: randomBetween(0, 360), // Rotates the physical star icon
             def:      pt.def,
             alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
             color:    '#ffffff',
             element:  null,
         });
+    });
     });
 
     for (let i = 0; i < STAR_COUNT; i++) {
@@ -280,14 +302,22 @@ function init() {
     placeStars();
     initDOM();
 
+   // Click anywhere near the center of the wolf to reveal it
     svg.addEventListener('click', e => {
         if (wolfRevealed) return;
-        if (
-            e.clientX >= wolfOffset.x &&
-            e.clientX <= wolfOffset.x + WOLF_PATTERN_WIDTH &&
-            e.clientY >= wolfOffset.y &&
-            e.clientY <= wolfOffset.y + WOLF_PATTERN_HEIGHT
-        ) {
+        
+        // Find the center of the wolf on the screen
+        const cx = wolfOffset.x + WOLF_PATTERN_WIDTH / 2;
+        const cy = wolfOffset.y + WOLF_PATTERN_HEIGHT / 2;
+        
+        // Create a circular click radius (half the height of the pattern)
+        const clickRadius = WOLF_PATTERN_HEIGHT / 2;
+        
+        // Check if the click distance is inside the radius (using squared math for speed)
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        
+        if ((dx * dx + dy * dy) <= (clickRadius * clickRadius)) {
             revealWolf();
         }
     });
