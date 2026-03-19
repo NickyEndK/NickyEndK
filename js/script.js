@@ -69,7 +69,7 @@ const ANGEL_CONNECTIONS = [
   // Hips & legs
   [8, 17], [8, 18], [17, 19], [18, 20],
   // Chest detail
-  [7, 21], [21, 22], [ [22, 23],
+  [7, 21], [21, 22], [22, 23],
   // Optional navel link
   [8, 24]
 ];
