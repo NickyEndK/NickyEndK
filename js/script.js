@@ -85,12 +85,13 @@ function placeStars() {
  */
 function initDOM() {
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
-
+    svg.setAttribute('width', window.innerWidth);
+    svg.setAttribute('height', window.innerHeight);
     stars.forEach(starData => {
         const starUse = document.createElementNS(SVG_NS, 'use');
         
         // Reference the ID from our defs (<use href="#star1">)
-        starUse.setAttribute('href', starData.def.id);
+        starUse.setAttribute("http://www.w3.org/1999/xlink", "xlink:href", starData.def.id);
         
         // Apply Color and Opacity
         starUse.setAttribute('fill', starData.color);
