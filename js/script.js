@@ -35,7 +35,6 @@ const WOLF_PATTERN = [];
 const WOLF_CONNECTIONS = [];
 let globalNodeIndex = 0;
 
-// Algorithm: Read paths, create a star at every anchor point, connect the dots
 WOLF_PATHS.forEach(pathStr => {
     const pairs = pathStr.match(/\d+\.\d+,\d+\.\d+/g);
     if (pairs) {
@@ -43,24 +42,18 @@ WOLF_PATHS.forEach(pathStr => {
         pairs.forEach((pair, localIndex) => {
             const [rx, ry] = pair.split(',').map(Number);
             WOLF_PATTERN.push({ rx, ry, def: starDefs[Math.floor(Math.random() * starDefs.length)] });
-            
-            // Connect to previous star in this path line
             if (localIndex > 0) WOLF_CONNECTIONS.push([globalNodeIndex - 1, globalNodeIndex]);
             globalNodeIndex++;
         });
-        // If the path ends with Z, loop the final line back to the start of the shape
         if (pathStr.trim().endsWith('Z')) WOLF_CONNECTIONS.push([globalNodeIndex - 1, pathStartIndex]);
     }
 });
 
-const WOLF_SCALE          = 3.8;
-const WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
-const WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
-const WOLF_STAR_SIZE      = 5;    
+let WOLF_SCALE          = 3.8;
+let WOLF_PATTERN_WIDTH  = 0;
+let WOLF_PATTERN_HEIGHT = 0;
 
 const stars = [];
-
-// GLOBAL VARIABLES (Properly scoped)
 let wolfOffset   = { x: 0, y: 0 };
 let wolfRevealed = false;
 let isDrawing    = false;     
@@ -69,28 +62,22 @@ const wolfLines    = [];
 
 // =======================
 
-/**
- * UTILITY: RANDOMIZER
- */
 function randomBetween(min, max) {
     return Math.random() * (max - min) + min;
 }
 
 /**
- * OVERLAP LOGIC
+ * OPTIMIZATION 1: Squared Distance Check (No Math.sqrt)
  */
 function overlaps(candidate, existingStar) {
     const dx = candidate.x - existingStar.x;
     const dy = candidate.y - existingStar.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const distanceSquared = (dx * dx) + (dy * dy); 
     
     const minDist = (candidate.size / 2) + (existingStar.size / 2) + OVERLAP_PADDING;
-    return distance < minDist;
+    return distanceSquared < (minDist * minDist);
 }
 
-/**
- * STAR PLACEMENT (Calculating Data)
- */
 function placeStars() {
     stars.length = 0;
     svg.innerHTML = '';
@@ -99,23 +86,26 @@ function placeStars() {
     wolfRevealed = false;
     isDrawing = false;
     
-    // Choose a random position for the wolf constellation
+    WOLF_SCALE = (window.innerHeight * 0.6) / 110; 
+    WOLF_SCALE = Math.max(2.5, Math.min(WOLF_SCALE, 8)); 
+    WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
+    WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
+    
     const margin = 30;
     const maxX = window.innerWidth  - WOLF_PATTERN_WIDTH  - margin;
     const maxY = window.innerHeight - WOLF_PATTERN_HEIGHT - margin;
     
-    // Clamp so the pattern stays on-screen
     wolfOffset.x = randomBetween(margin, Math.max(margin, maxX));
     wolfOffset.y = randomBetween(margin, Math.max(margin, maxY));
 
-    // 1. GENERATE THE WOLF STARS FIRST
     WOLF_PATTERN.forEach((pt, idx) => {
+        const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE); // Wolf uses global sizes now
         wolfStarData.push({
             id:       'wolf_' + idx,
             x:        wolfOffset.x + pt.rx * WOLF_SCALE,
             y:        wolfOffset.y + pt.ry * WOLF_SCALE,
-            size:     WOLF_STAR_SIZE,
-            rotation: 0,
+            size:     size,
+            rotation: randomBetween(0, 360),
             def:      pt.def,
             alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
             color:    '#ffffff',
@@ -123,7 +113,6 @@ function placeStars() {
         });
     });
 
-    // 2. GENERATE BACKGROUND STARS EVERYWHERE ELSE
     for (let i = 0; i < STAR_COUNT; i++) {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
@@ -141,11 +130,9 @@ function placeStars() {
                 element:  null
             };
 
-            // Check if it overlaps other background stars OR the wolf stars
             const overlapsBackground = stars.some(existing => overlaps(candidate, existing));
             const overlapsWolf = wolfStarData.some(existing => overlaps(candidate, existing));
 
-            // Only place the star if the spot is completely empty
             if (!overlapsBackground && !overlapsWolf) {
                 stars.push(candidate);
                 break;
@@ -155,36 +142,49 @@ function placeStars() {
 }
 
 /**
- * INIT DOM: Creates the <use> elements (Runs only once)
+ * OPTIMIZATION 2 & 3: DocumentFragment and SVG Groups (<g>)
  */
 function initDOM() {
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
     svg.setAttribute('width',  window.innerWidth);
     svg.setAttribute('height', window.innerHeight);
 
-    // Random background stars
+    // 1. Create the invisible staging area
+    const fragment = document.createDocumentFragment();
+
+    // 2. Create organized layer groups
+    const bgGroup = document.createElementNS(SVG_NS, 'g');
+    bgGroup.id = 'layer-background-stars';
+
+    const lineGroup = document.createElementNS(SVG_NS, 'g');
+    lineGroup.id = 'layer-wolf-lines';
+
+    const wolfStarGroup = document.createElementNS(SVG_NS, 'g');
+    wolfStarGroup.id = 'layer-wolf-stars';
+
+    // Append stars to the background group
     stars.forEach(starData => {
         const starUse = document.createElementNS(SVG_NS, 'use');
         starUse.setAttribute('href', starData.def.id);
         starUse.setAttribute('fill',    starData.color);
         starUse.setAttribute('opacity', starData.alpha);
         updateStarTransform(starUse, starData);
-        svg.appendChild(starUse);
+        bgGroup.appendChild(starUse);
         starData.element = starUse;
     });
 
-    // Wolf constellation stars — initially look like ordinary stars
+    // Append wolf stars to the wolf group
     wolfStarData.forEach(starData => {
         const starUse = document.createElementNS(SVG_NS, 'use');
         starUse.setAttribute('href',    starData.def.id);
         starUse.setAttribute('fill',    starData.color);
         starUse.setAttribute('opacity', starData.alpha);
         updateStarTransform(starUse, starData);
-        svg.appendChild(starUse);
+        wolfStarGroup.appendChild(starUse);
         starData.element = starUse;
     });
 
-    // Constellation lines — Set to zero length initially
+    // Append lines to the lines group
     WOLF_CONNECTIONS.forEach(([i, j]) => {
         const line = document.createElementNS(SVG_NS, 'line');
         const s1   = wolfStarData[i];
@@ -192,42 +192,42 @@ function initDOM() {
         
         line.setAttribute('x1', s1.x);
         line.setAttribute('y1', s1.y);
-        line.setAttribute('x2', s1.x); // Start at zero length
-        line.setAttribute('y2', s1.y); // Start at zero length
-        line.setAttribute('stroke', '#ffffff'); // Pure White
+        line.setAttribute('x2', s1.x); 
+        line.setAttribute('y2', s1.y); 
+        line.setAttribute('stroke', '#ffffff'); 
         line.setAttribute('stroke-width', '0.8');
         line.setAttribute('opacity', '0');
         
-        // Save the destination so we can animate to it later
         line.dataset.targetX = s2.x;
         line.dataset.targetY = s2.y;
         
-        svg.appendChild(line);
+        lineGroup.appendChild(line);
         wolfLines.push(line);
     });
-} // Fixed missing bracket here!
 
-/**
- * MATH: Properly aligns, rotates, and scales the stars
- */
+    // 3. Attach layers to fragment, then fragment to SVG (One single browser paint!)
+    fragment.appendChild(bgGroup);
+    fragment.appendChild(lineGroup); // Lines go under the wolf stars
+    fragment.appendChild(wolfStarGroup);
+    
+    svg.appendChild(fragment);
+}
+
 function updateStarTransform(element, data) {
     const scale = data.size / data.def.originalSize;
     const cx = data.def.originalSize / 2;
     const cy = data.def.originalSize / 2;
+    // Math.round limits excess decimal places to clean up the inline DOM text
     element.setAttribute(
         'transform', 
-        `translate(${data.x}, ${data.y}) rotate(${data.rotation}) scale(${scale}) translate(${-cx}, ${-cy})`
+        `translate(${Math.round(data.x)}, ${Math.round(data.y)}) rotate(${Math.round(data.rotation)}) scale(${scale}) translate(${-cx}, ${-cy})`
     );
 }
 
-/**
- * REVEAL WOLF: Animates lines one-by-one
- */
 function revealWolf() {
     if (wolfRevealed || isDrawing) return;
     isDrawing = true;
 
-    // Instantly turn constellation stars bright white
     wolfStarData.forEach(s => {
         s.color = '#ffffff';
         s.alpha = 1.0;
@@ -235,7 +235,6 @@ function revealWolf() {
         s.element.setAttribute('opacity', '1');
     });
 
-    // Sequential drawing animation
     function drawNextLine(index) {
         if (index >= wolfLines.length) {
             wolfRevealed = true;
@@ -244,7 +243,7 @@ function revealWolf() {
         }
 
         const line = wolfLines[index];
-        line.setAttribute('opacity', '0.7'); // Make visible
+        line.setAttribute('opacity', '0.7'); 
         
         const startX = parseFloat(line.getAttribute('x1'));
         const startY = parseFloat(line.getAttribute('y1'));
@@ -252,17 +251,15 @@ function revealWolf() {
         const targetY = parseFloat(line.dataset.targetY);
         
         let progress = 0;
-        const speed = 0.08; // SPEED CONTROL: Increase for faster, decrease for slower
+        const speed = 0.08; 
 
         function frame() {
             progress += speed;
             if (progress >= 1) {
-                // Line reached its destination, start the next one
                 line.setAttribute('x2', targetX);
                 line.setAttribute('y2', targetY);
                 drawNextLine(index + 1);
             } else {
-                // Interpolate length
                 line.setAttribute('x2', startX + (targetX - startX) * progress);
                 line.setAttribute('y2', startY + (targetY - startY) * progress);
                 requestAnimationFrame(frame);
@@ -271,36 +268,18 @@ function revealWolf() {
         requestAnimationFrame(frame);
     }
 
-    drawNextLine(0); // Kick off the animation
+    drawNextLine(0);
 }
 
-/**
- * ANIMATION LOOP
- */
 function animate() {
-    // Twinkle background stars
-    stars.forEach(star => {
-        star.alpha = 0.5 + Math.sin(Date.now() / 300 + star.id) * 0.4;
-        star.element.setAttribute('opacity', star.alpha);
-        updateStarTransform(star.element, star);
-    });
-
-    // Twinkle wolf stars ONLY before they are revealed
-    if (!wolfRevealed && !isDrawing) {
-        wolfStarData.forEach((star, idx) => {
-            star.alpha = 0.5 + Math.sin(Date.now() / 300 + idx * 1.3) * 0.4;
-            star.element.setAttribute('opacity', star.alpha);
-        });
-    }
-
-    requestAnimationFrame(animate);
+    // ANIMATION FROZEN FOR NOW (per your request)
+    // requestAnimationFrame(animate); 
 }
 
 function init() {
     placeStars();
     initDOM();
 
-    // Click anywhere inside the wolf bounding box to reveal it
     svg.addEventListener('click', e => {
         if (wolfRevealed) return;
         if (
@@ -313,6 +292,7 @@ function init() {
         }
     });
 
+    // Start frozen animation loop
     animate();
 }
 
