@@ -69,9 +69,6 @@ function placeStars() {
             };
 
                 if (!stars.some(existing => overlaps(candidate, existing))) {
-                    if (Math.random() > 0.9) {
-                    candidate.color = '#ffd700';
-                    }
                     stars.push(candidate);
                     break;
                 }    
