@@ -67,13 +67,6 @@ function placeStars() {
                 color: '#ffffff', // Default color is white
                 element: null // We will store the DOM element here for easy animation
             };
-
-                if (!stars.some(existing => overlaps(candidate, existing))) {
-                    if (Math.random() > 0.9) {
-                    candidate.color = '#ffd700';
-                    }
-                    stars.push(candidate);
-                    break;
                 }    
             }
         }
