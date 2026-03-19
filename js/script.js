@@ -8,7 +8,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * CONFIGURATION CONSTANTS
  */
 const STAR_COUNT      = 200;
-const STAR_MIN_SIZE   = 5;   // Increased slightly so they are easier to see
+const STAR_MIN_SIZE   = 5;   
 const STAR_MAX_SIZE   = 10;
 const OVERLAP_PADDING = 4;
 const MAX_ATTEMPTS    = 100;
@@ -21,8 +21,8 @@ const starDefs =[
     { id: '#star3', originalSize: 100 },
     { id: '#star4', originalSize: 100 }
 ];
-// Notice: We map each star to its ID and its original grid size!
-// Refined coordinates (0-100) based on Angel.svg silhouette
+
+// Raw SVG math for the wolf
 const WOLF_PATHS = [
   "M45.500,79.500 C44.840,76.861 44.831,74.120 45.500,71.500 C45.722,70.630 46.017,69.775 46.389,68.942 C47.510,66.426 49.263,64.251 51.500,62.500 ",
   "M39.500,98.500 L37.500,89.500 C36.766,89.928 36.026,90.360 35.289,90.790 C35.087,90.907 34.630,91.174 34.427,91.293 C32.625,92.344 28.476,94.764 25.500,96.500 C25.500,97.167 25.500,97.833 25.500,98.500 L39.500,98.500 Z",
@@ -53,9 +53,17 @@ WOLF_PATHS.forEach(pathStr => {
     }
 });
 
-const WOLF_SCALE = 3.8;
-const WOLF_PATTERN_WIDTH = 80 * WOLF_SCALE;
+const WOLF_SCALE          = 3.8;
+const WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
 const WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
+const WOLF_STAR_SIZE      = 5;    
+
+const stars = [];
+let wolfOffset   = { x: 0, y: 0 };
+let wolfRevealed = false;
+const wolfStarData = [];
+const wolfLines    = [];
+
 // =======================
 
 /**
@@ -83,19 +91,19 @@ function overlaps(candidate, existingStar) {
 function placeStars() {
     stars.length = 0;
     svg.innerHTML = '';
-    angelStarData.length = 0;
-    angelLines.length = 0;
-    angelRevealed = false;
+    wolfStarData.length = 0;
+    wolfLines.length = 0;
+    wolfRevealed = false;
 
-    // Choose a random position for the angel constellation
+    // Choose a random position for the wolf constellation
     const margin = 30;
     const maxX = window.innerWidth  - WOLF_PATTERN_WIDTH  - margin;
     const maxY = window.innerHeight - WOLF_PATTERN_HEIGHT - margin;
     // Clamp so the pattern stays on-screen even on small viewports
-    angelOffset.x = randomBetween(margin, Math.max(margin, maxX));
-    angelOffset.y = randomBetween(margin, Math.max(margin, maxY));
+    wolfOffset.x = randomBetween(margin, Math.max(margin, maxX));
+    wolfOffset.y = randomBetween(margin, Math.max(margin, maxY));
 
-    // Place random background stars, skipping any that land inside the angel bounding box
+    // Place random background stars, skipping any that land inside the wolf bounding box
     for (let i = 0; i < STAR_COUNT; i++) {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
@@ -113,28 +121,28 @@ function placeStars() {
                 element:  null
             };
 
-            // Clear random stars from the angel bounding box (account for star radius)
-            const insideAngel = (
-                candidate.x + candidate.size / 2 >= angelOffset.x &&
-                candidate.x - candidate.size / 2 <= angelOffset.x + ANGEL_PATTERN_WIDTH &&
-                candidate.y + candidate.size / 2 >= angelOffset.y &&
-                candidate.y - candidate.size / 2 <= angelOffset.y + ANGEL_PATTERN_HEIGHT
+            // Clear random stars from the wolf bounding box
+            const insideWolf = (
+                candidate.x + candidate.size / 2 >= wolfOffset.x &&
+                candidate.x - candidate.size / 2 <= wolfOffset.x + WOLF_PATTERN_WIDTH &&
+                candidate.y + candidate.size / 2 >= wolfOffset.y &&
+                candidate.y - candidate.size / 2 <= wolfOffset.y + WOLF_PATTERN_HEIGHT
             );
 
-            if (!insideAngel && !stars.some(existing => overlaps(candidate, existing))) {
+            if (!insideWolf && !stars.some(existing => overlaps(candidate, existing))) {
                 stars.push(candidate);
                 break;
             }
         }
     }
 
-    // Build angel constellation star data objects
+    // Build wolf constellation star data objects
     WOLF_PATTERN.forEach((pt, idx) => {
-        angelStarData.push({
-            id:       'angel_' + idx,
-            x:        angelOffset.x + pt.rx * ANGEL_SCALE,
-            y:        angelOffset.y + pt.ry * ANGEL_SCALE,
-            size:     ANGEL_STAR_SIZE,
+        wolfStarData.push({
+            id:       'wolf_' + idx,
+            x:        wolfOffset.x + pt.rx * WOLF_SCALE,
+            y:        wolfOffset.y + pt.ry * WOLF_SCALE,
+            size:     WOLF_STAR_SIZE,
             rotation: 0,
             def:      pt.def,
             alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
@@ -155,25 +163,16 @@ function initDOM() {
     // Random background stars
     stars.forEach(starData => {
         const starUse = document.createElementNS(SVG_NS, 'use');
-        
-        // Reference the ID from our defs (<use href="#star1">)
         starUse.setAttribute('href', starData.def.id);
-        
-        // Apply Color and Opacity
         starUse.setAttribute('fill',    starData.color);
         starUse.setAttribute('opacity', starData.alpha);
-        
-        // Position it
         updateStarTransform(starUse, starData);
-
         svg.appendChild(starUse);
-        
-        // Save the SVG element to our data object so we can move it later!
         starData.element = starUse;
     });
 
-    // Angel constellation stars — initially look like ordinary stars
-    angelStarData.forEach(starData => {
+    // Wolf constellation stars — initially look like ordinary stars
+    wolfStarData.forEach(starData => {
         const starUse = document.createElementNS(SVG_NS, 'use');
         starUse.setAttribute('href',    starData.def.id);
         starUse.setAttribute('fill',    starData.color);
@@ -183,11 +182,11 @@ function initDOM() {
         starData.element = starUse;
     });
 
-    // Constellation lines — hidden until the Angel is revealed
+    // Constellation lines — hidden until the Wolf is revealed
     WOLF_CONNECTIONS.forEach(([i, j]) => {
         const line = document.createElementNS(SVG_NS, 'line');
-        const s1   = angelStarData[i];
-        const s2   = angelStarData[j];
+        const s1   = wolfStarData[i];
+        const s2   = wolfStarData[j];
         line.setAttribute('x1',           s1.x);
         line.setAttribute('y1',           s1.y);
         line.setAttribute('x2',           s2.x);
@@ -196,7 +195,7 @@ function initDOM() {
         line.setAttribute('stroke-width', '0.8');
         line.setAttribute('opacity',      '0');
         svg.appendChild(line);
-        angelLines.push(line);
+        wolfLines.push(line);
     });
 }
 
@@ -204,13 +203,9 @@ function initDOM() {
  * MATH: Properly aligns, rotates, and scales the stars
  */
 function updateStarTransform(element, data) {
-    // Figure out how much we need to shrink/grow the original shape
     const scale = data.size / data.def.originalSize;
-    // Find the center of the original shape
     const cx = data.def.originalSize / 2;
     const cy = data.def.originalSize / 2;
-    
-    // Move to X,Y -> Rotate -> Scale -> Shift so the center of the shape aligns with X,Y
     element.setAttribute(
         'transform', 
         `translate(${data.x}, ${data.y}) rotate(${data.rotation}) scale(${scale}) translate(${-cx}, ${-cy})`
@@ -218,55 +213,48 @@ function updateStarTransform(element, data) {
 }
 
 /**
- * REVEAL ANGEL: Called when the user clicks inside the constellation bounding box.
- * Turns the constellation stars gold and shows the connecting lines.
+ * REVEAL WOLF: Called when the user clicks inside the constellation bounding box.
  */
-function revealAngel() {
-    angelRevealed = true;
-    angelStarData.forEach(s => {
+function revealWolf() {
+    wolfRevealed = true;
+    wolfStarData.forEach(s => {
         s.color = 'gold';
         s.alpha = 1.0;
         s.element.setAttribute('fill',    'gold');
         s.element.setAttribute('opacity', '1');
     });
-    angelLines.forEach(line => {
+    wolfLines.forEach(line => {
         line.setAttribute('opacity', '0.7');
     });
 }
 
 /**
- * ANIMATION LOOP (Runs 60 times a second)
+ * ANIMATION LOOP
  */
 function animate() {
     // Twinkle random background stars
     stars.forEach(star => {
-        // We use Math.sin and the star's ID so they don't all twinkle at the exact same time
         star.alpha = 0.5 + Math.sin(Date.now() / 300 + star.id) * 0.4;
-        
-        // Apply the updated rotation and opacity to the DOM element
         star.element.setAttribute('opacity', star.alpha);
         updateStarTransform(star.element, star);
     });
 
-    // Animate angel constellation stars
-    if (!angelRevealed) {
-        // Twinkle like ordinary stars before reveal
-        angelStarData.forEach((star, idx) => {
+    // Animate wolf constellation stars
+    if (!wolfRevealed) {
+        wolfStarData.forEach((star, idx) => {
             star.alpha = 0.5 + Math.sin(Date.now() / 300 + idx * 1.3) * 0.4;
             star.element.setAttribute('opacity', star.alpha);
         });
     } else {
-        // Gentle golden pulse after reveal
         const pulse = 0.85 + Math.sin(Date.now() / 600) * 0.15;
-        angelStarData.forEach(star => {
+        wolfStarData.forEach(star => {
             star.element.setAttribute('opacity', pulse);
         });
-        angelLines.forEach(line => {
+        wolfLines.forEach(line => {
             line.setAttribute('opacity', pulse * 0.7);
         });
     }
 
-    // Request the next frame to keep the animation going
     requestAnimationFrame(animate);
 }
 
@@ -277,20 +265,20 @@ function init() {
     placeStars();
     initDOM();
 
-    // Click anywhere inside the angel bounding box to reveal the constellation
+    // Click anywhere inside the wolf bounding box to reveal it
     svg.addEventListener('click', e => {
-        if (angelRevealed) return;
+        if (wolfRevealed) return;
         if (
-            e.clientX >= angelOffset.x &&
-            e.clientX <= angelOffset.x + ANGEL_PATTERN_WIDTH &&
-            e.clientY >= angelOffset.y &&
-            e.clientY <= angelOffset.y + ANGEL_PATTERN_HEIGHT
+            e.clientX >= wolfOffset.x &&
+            e.clientX <= wolfOffset.x + WOLF_PATTERN_WIDTH &&
+            e.clientY >= wolfOffset.y &&
+            e.clientY <= wolfOffset.y + WOLF_PATTERN_HEIGHT
         ) {
-            revealAngel();
+            revealWolf();
         }
     });
 
-    animate(); // Start the animation loop!
+    animate();
 }
 window.addEventListener('resize', () => {
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
