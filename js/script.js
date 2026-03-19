@@ -16,68 +16,60 @@ const MIN_ALPHA       = 0.2;
 const MAX_ALPHA       = 1.0;
 
 // Notice: We map each star to its ID and its original grid size!
-const starDefs = [
-    { id: '#star1', originalSize: 100 },
-    { id: '#star2', originalSize: 100 },
-    { id: '#star3', originalSize: 100 },
-    { id: '#star4', originalSize: 100 }
-];
-
-// Map coordinates (0-100) to match the Angel.svg silhouette
+// Refined coordinates (0-100) based on Angel.svg silhouette
 const ANGEL_PATTERN = [
-    // Hair / Head
-    { rx: 45, ry: 5,  def: starDefs[0] }, // 0: Top hair tuft
-    { rx: 65, ry: 12, def: starDefs[1] }, // 1: Right hair spike
-    { rx: 35, ry: 15, def: starDefs[2] }, // 2: Left hair spike
-    { rx: 50, ry: 20, def: starDefs[3] }, // 3: Face center
+    // Hair & Head
+    { rx: 48, ry: 6,  def: starDefs[0] }, // 0: Top hair peak
+    { rx: 72, ry: 12, def: starDefs[1] }, // 1: Right hair high
+    { rx: 88, ry: 30, def: starDefs[2] }, // 2: Right hair low (behind)
+    { rx: 62, ry: 42, def: starDefs[3] }, // 3: Back of head/neck join
+    { rx: 22, ry: 30, def: starDefs[0] }, // 4: Left hair spike
+    { rx: 18, ry: 45, def: starDefs[1] }, // 5: Front face/mouth tip
+    { rx: 52, ry: 50, def: starDefs[2] }, // 6: Neck base
     
     // Bowtie
-    { rx: 50, ry: 28, def: starDefs[0] }, // 4: Bowtie center
-    { rx: 46, ry: 26, def: starDefs[1] }, // 5: Bowtie top-left
-    { rx: 54, ry: 30, def: starDefs[2] }, // 6: Bowtie bottom-right
+    { rx: 52, ry: 54, def: starDefs[3] }, // 7: Bowtie center
+    { rx: 46, ry: 53, def: starDefs[0] }, // 8: Bowtie left
+    { rx: 58, ry: 53, def: starDefs[1] }, // 9: Bowtie right
     
-    // Upper Arms (High)
-    { rx: 42, ry: 32, def: starDefs[3] }, // 7: Left upper shoulder
-    { rx: 30, ry: 45, def: starDefs[0] }, // 8: Left upper elbow
-    { rx: 20, ry: 60, def: starDefs[1] }, // 9: Left upper hand
-    { rx: 58, ry: 32, def: starDefs[2] }, // 10: Right upper shoulder
-    { rx: 65, ry: 45, def: starDefs[3] }, // 11: Right upper elbow
-    { rx: 70, ry: 60, def: starDefs[0] }, // 12: Right upper hand
+    // Upper Arms (Long/High)
+    { rx: 48, ry: 62, def: starDefs[2] }, // 10: Upper Left Shoulder
+    { rx: 35, ry: 75, def: starDefs[3] }, // 11: Upper Left Elbow
+    { rx: 22, ry: 90, def: starDefs[0] }, // 12: Upper Left Hand
+    { rx: 64, ry: 62, def: starDefs[1] }, // 13: Upper Right Shoulder
+    { rx: 78, ry: 75, def: starDefs[2] }, // 14: Upper Right Elbow
+    { rx: 88, ry: 90, def: starDefs[3] }, // 15: Upper Right Hand
 
-    // Lower Arms (Mid)
-    { rx: 45, ry: 45, def: starDefs[1] }, // 13: Left lower shoulder
-    { rx: 35, ry: 65, def: starDefs[2] }, // 14: Left lower hand
-    { rx: 55, ry: 45, def: starDefs[3] }, // 15: Right lower shoulder
-    { rx: 65, ry: 65, def: starDefs[0] }, // 16: Right lower hand
+    // Lower Arms & Waist
+    { rx: 54, ry: 78, def: starDefs[0] }, // 16: Waist
+    { rx: 50, ry: 70, def: starDefs[1] }, // 17: Lower Left Shoulder
+    { rx: 40, ry: 88, def: starDefs[2] }, // 18: Lower Left Elbow
+    { rx: 32, ry: 98, def: starDefs[3] }, // 19: Lower Left Hand
+    { rx: 58, ry: 70, def: starDefs[0] }, // 20: Lower Right Shoulder
+    { rx: 70, ry: 88, def: starDefs[1] }, // 21: Lower Right Elbow
+    { rx: 80, ry: 98, def: starDefs[2] }, // 22: Lower Right Hand
 
-    // Torso & Legs
-    { rx: 50, ry: 55, def: starDefs[1] }, // 17: Waist
-    { rx: 45, ry: 75, def: starDefs[2] }, // 18: Left knee
-    { rx: 40, ry: 95, def: starDefs[3] }, // 19: Left foot
-    { rx: 55, ry: 75, def: starDefs[0] }, // 20: Right knee
-    { rx: 60, ry: 95, def: starDefs[1] }  // 21: Right foot
+    // Feet
+    { rx: 52, ry: 98, def: starDefs[3] }, // 23: Left Foot
+    { rx: 58, ry: 98, def: starDefs[0] }  // 24: Right Foot
 ];
 
 const ANGEL_CONNECTIONS = [
-    // Head & Hair
-    [0, 1], [0, 2], [1, 3], [2, 3],
-    // Bowtie
-    [3, 4], [4, 5], [4, 6], [5, 6],
-    // Upper Arms
-    [4, 7], [7, 8], [8, 9],
-    [4, 10], [10, 11], [11, 12],
-    // Lower Arms
-    [17, 13], [13, 14],
-    [17, 15], [15, 16],
+    // Head Contour
+    [0, 1], [1, 2], [2, 3], [3, 6], [6, 5], [5, 4], [4, 0],
+    // Bowtie Details
+    [6, 7], [7, 8], [7, 9], [8, 9],
+    // Upper Arm Set
+    [10, 11], [11, 12], [13, 14], [14, 15],
+    // Lower Arm Set
+    [17, 18], [18, 19], [20, 21], [21, 22],
     // Body & Legs
-    [4, 17],
-    [17, 18], [18, 19],
-    [17, 20], [20, 21]
+    [6, 16], [16, 23], [16, 24]
 ];
 
-const ANGEL_SCALE          = 3.5;  
-const ANGEL_STAR_SIZE      = 6;    
-const ANGEL_PATTERN_WIDTH  = 70 * ANGEL_SCALE; 
+const ANGEL_SCALE          = 3.8;  
+const ANGEL_STAR_SIZE      = 5;    
+const ANGEL_PATTERN_WIDTH  = 90 * ANGEL_SCALE; 
 const ANGEL_PATTERN_HEIGHT = 100 * ANGEL_SCALE;
 const stars = [];
 let angelOffset   = { x: 0, y: 0 };
