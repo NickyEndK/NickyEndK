@@ -89,8 +89,8 @@ function placeStars() {
 
     // Choose a random position for the angel constellation
     const margin = 30;
-    const maxX = window.innerWidth  - ANGEL_PATTERN_WIDTH  - margin;
-    const maxY = window.innerHeight - ANGEL_PATTERN_HEIGHT - margin;
+    const maxX = window.innerWidth  - WOLF_PATTERN_WIDTH  - margin;
+    const maxY = window.innerHeight - WOLF_PATTERN_HEIGHT - margin;
     // Clamp so the pattern stays on-screen even on small viewports
     angelOffset.x = randomBetween(margin, Math.max(margin, maxX));
     angelOffset.y = randomBetween(margin, Math.max(margin, maxY));
@@ -129,7 +129,7 @@ function placeStars() {
     }
 
     // Build angel constellation star data objects
-    ANGEL_PATTERN.forEach((pt, idx) => {
+    WOLF_PATTERN.forEach((pt, idx) => {
         angelStarData.push({
             id:       'angel_' + idx,
             x:        angelOffset.x + pt.rx * ANGEL_SCALE,
@@ -184,7 +184,7 @@ function initDOM() {
     });
 
     // Constellation lines — hidden until the Angel is revealed
-    ANGEL_CONNECTIONS.forEach(([i, j]) => {
+    WOLF_CONNECTIONS.forEach(([i, j]) => {
         const line = document.createElementNS(SVG_NS, 'line');
         const s1   = angelStarData[i];
         const s2   = angelStarData[j];
