@@ -79,6 +79,7 @@ const ANGEL_SCALE          = 3.5;
 const ANGEL_STAR_SIZE      = 6;    
 const ANGEL_PATTERN_WIDTH  = 70 * ANGEL_SCALE; 
 const ANGEL_PATTERN_HEIGHT = 100 * ANGEL_SCALE;
+const stars = [];
 let angelOffset   = { x: 0, y: 0 };
 let angelRevealed = false;
 const angelStarData = [];
