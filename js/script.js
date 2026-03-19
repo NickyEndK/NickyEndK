@@ -10,7 +10,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const STAR_COUNT      = 200;
 const STAR_MIN_SIZE   = 5;   
 const STAR_MAX_SIZE   = 10;
-const OVERLAP_PADDING = 4;
+const OVERLAP_PADDING = 2; // Reduced padding for a tighter, more natural look
 const MAX_ATTEMPTS    = 100;
 const MIN_ALPHA       = 0.2;
 const MAX_ALPHA       = 1.0;
@@ -67,14 +67,20 @@ function randomBetween(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-// Added 'customPadding' so we can push background stars further away from the Wolf
-function overlaps(candidate, existingStar, customPadding = OVERLAP_PADDING) {
-    const dx = candidate.x - existingStar.x;
-    const dy = candidate.y - existingStar.y;
-    const distanceSquared = (dx * dx) + (dy * dy); 
-    
-    const minDist = (candidate.size / 2) + (existingStar.size / 2) + customPadding;
-    return distanceSquared < (minDist * minDist);
+/**
+ * Checks if a candidate star overlaps with an existing star.
+ * If they are too close, it returns the maximum size the candidate 
+ * can be to avoid overlapping.
+ */
+function getSafeSize(candidateX, candidateY, targetSize, existingStar, padding = OVERLAP_PADDING) {
+    const dist = Math.hypot(candidateX - existingStar.x, candidateY - existingStar.y);
+    const combinedRadius = (targetSize / 2) + (existingStar.size / 2) + padding;
+
+    if (dist < combinedRadius) {
+        // Calculate size that would perfectly touch the neighbor with padding
+        return Math.max(1.5, (dist - padding) * 2 - existingStar.size);
+    }
+    return targetSize;
 }
 
 function placeStars() {
@@ -86,12 +92,13 @@ function placeStars() {
     isDrawing = false;
     
     const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
-    WOLF_SCALE = (minScreenDim * 0.5) / 110; 
+    // Slightly increased scale to give the tight angel coords more room
+    WOLF_SCALE = (minScreenDim * 0.55) / 110; 
     WOLF_SCALE = Math.max(0.5, WOLF_SCALE); 
     WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
     WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
     
-    const margin = 30;
+    const margin = 50;
     const maxX = window.innerWidth  - WOLF_PATTERN_WIDTH  - margin;
     const maxY = window.innerHeight - WOLF_PATTERN_HEIGHT - margin;
     
@@ -102,22 +109,29 @@ function placeStars() {
     const centerX = WOLF_PATTERN_WIDTH / 2;
     const centerY = WOLF_PATTERN_HEIGHT / 2;
 
+    // 1. PLACE ANGEL STARS FIRST (They define the shape)
     WOLF_PATTERN.forEach((pt, idx) => {
-        const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE); 
-        
         const px = pt.rx * WOLF_SCALE;
         const py = pt.ry * WOLF_SCALE;
-
         const dx = px - centerX;
         const dy = py - centerY;
         
         const rotatedX = dx * Math.cos(wolfAngle) - dy * Math.sin(wolfAngle);
         const rotatedY = dx * Math.sin(wolfAngle) + dy * Math.cos(wolfAngle);
+        const finalX = wolfOffset.x + centerX + rotatedX;
+        const finalY = wolfOffset.y + centerY + rotatedY;
+
+        let size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
+
+        // Check against PREVIOUSLY placed angel stars and shrink if needed
+        wolfStarData.forEach(existing => {
+            size = getSafeSize(finalX, finalY, size, existing, 1.5);
+        });
 
         wolfStarData.push({
             id:       'wolf_' + idx,
-            x:        wolfOffset.x + centerX + rotatedX,
-            y:        wolfOffset.y + centerY + rotatedY,
+            x:        finalX,
+            y:        finalY,
             size:     size,
             rotation: randomBetween(0, 360),
             def:      pt.def,
@@ -127,33 +141,40 @@ function placeStars() {
         });
     });
 
+    // 2. PLACE BACKGROUND STARS (They react to everything)
     for (let i = 0; i < STAR_COUNT; i++) {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-            const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
-            const def  = starDefs[Math.floor(Math.random() * starDefs.length)];
+            let size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
+            const x = randomBetween(size / 2, window.innerWidth  - size / 2);
+            const y = randomBetween(size / 2, window.innerHeight - size / 2);
             
-            const candidate = {
-                id: i,
-                x: randomBetween(size / 2, window.innerWidth  - size / 2),
-                y: randomBetween(size / 2, window.innerHeight - size / 2),
-                size:     size,
-                rotation: randomBetween(0, 360),
-                def:      def,
-                alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
-                color:    '#ffffff',
-                element:  null
-            };
+            // A. Check against Angel Stars (using a slightly larger buffer for clarity)
+            wolfStarData.forEach(wolfStar => {
+                size = getSafeSize(x, y, size, wolfStar, 10 * WOLF_SCALE);
+            });
 
-            const overlapsBackground = stars.some(existing => overlaps(candidate, existing));
-            
-            // --- ORGANIC CONTOUR CLEARING ---
-            // Tell background stars to stay at least 15 base-pixels away from any Wolf star.
-            // (You can increase '15' if you want a wider void around the shape)
-            const clearingBuffer = 15 * WOLF_SCALE; 
-            const overlapsWolf = wolfStarData.some(existing => overlaps(candidate, existing, clearingBuffer));
+            // B. Check against existing Background Stars
+            let isOverlappingBG = false;
+            for (const bgStar of stars) {
+                const dist = Math.hypot(x - bgStar.x, y - bgStar.y);
+                if (dist < (size / 2) + (bgStar.size / 2) + OVERLAP_PADDING) {
+                    isOverlappingBG = true;
+                    break;
+                }
+            }
 
-            if (!overlapsBackground && !overlapsWolf) {
-                stars.push(candidate);
+            if (!isOverlappingBG) {
+                stars.push({
+                    id: i,
+                    x: x,
+                    y: y,
+                    size:     size,
+                    rotation: randomBetween(0, 360),
+                    def:      starDefs[Math.floor(Math.random() * starDefs.length)],
+                    alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
+                    color:    '#ffffff',
+                    element:  null
+                });
                 break;
             }
         }
@@ -280,11 +301,6 @@ function revealWolf() {
     drawNextLine(0);
 }
 
-function animate() {
-    // ANIMATION FROZEN FOR NOW 
-    // requestAnimationFrame(animate); 
-}
-
 function init() {
     placeStars();
     initDOM();
@@ -294,7 +310,6 @@ function init() {
         
         const cx = wolfOffset.x + WOLF_PATTERN_WIDTH / 2;
         const cy = wolfOffset.y + WOLF_PATTERN_HEIGHT / 2;
-        
         const clickRadius = WOLF_PATTERN_HEIGHT / 2;
         
         const dx = e.clientX - cx;
@@ -304,8 +319,6 @@ function init() {
             revealWolf();
         }
     });
-
-    animate();
 }
 
 window.addEventListener('resize', () => {
@@ -314,5 +327,4 @@ window.addEventListener('resize', () => {
     svg.setAttribute('height', window.innerHeight);
 });
 
-console.log(`Number of stars generated: ${stars.length}`);
 init();
