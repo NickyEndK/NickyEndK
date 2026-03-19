@@ -73,11 +73,11 @@ const ANGEL_CONNECTIONS = [
   // Optional navel link
   [8, 24]
 ]
-
+const ANGEL_SCALE = 3.8;
+const ANGEL_PATTERN_WIDTH = 90 * ANGEL_SCALE;
+const ANGEL_PATTERN_HEIGHT = 100 * ANGEL_SCALE;
 const ANGEL_SCALE          = 3.8;  
 const ANGEL_STAR_SIZE      = 5;    
-const ANGEL_PATTERN_WIDTH  = 90 * ANGEL_SCALE; 
-const ANGEL_PATTERN_HEIGHT = 100 * ANGEL_SCALE;
 const stars = [];
 let angelOffset   = { x: 0, y: 0 };
 let angelRevealed = false;
