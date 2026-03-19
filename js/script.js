@@ -72,7 +72,8 @@ const ANGEL_CONNECTIONS = [
   [7, 21], [21, 22], [ [22, 23],
   // Optional navel link
   [8, 24]
-]
+];
+
 const ANGEL_SCALE = 3.8;
 const ANGEL_PATTERN_WIDTH = 90 * ANGEL_SCALE;
 const ANGEL_PATTERN_HEIGHT = 100 * ANGEL_SCALE;
