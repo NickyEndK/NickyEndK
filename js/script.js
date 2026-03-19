@@ -133,7 +133,6 @@ function placeStars() {
             element:  null,
         });
     });
-    });
 
     for (let i = 0; i < STAR_COUNT; i++) {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
