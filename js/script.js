@@ -77,7 +77,6 @@ const ANGEL_CONNECTIONS = [
 const ANGEL_SCALE = 3.8;
 const ANGEL_PATTERN_WIDTH = 90 * ANGEL_SCALE;
 const ANGEL_PATTERN_HEIGHT = 100 * ANGEL_SCALE;
-const ANGEL_SCALE          = 3.8;  
 const ANGEL_STAR_SIZE      = 5;    
 const stars = [];
 let angelOffset   = { x: 0, y: 0 };
