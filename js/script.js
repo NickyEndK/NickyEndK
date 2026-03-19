@@ -90,7 +90,7 @@ function initDOM() {
         const starUse = document.createElementNS(SVG_NS, 'use');
         
         // Reference the ID from our defs (<use href="#star1">)
-        starUse.setAttribute("http://www.w3.org/1999/xlink", "xlink:href", starData.def.id);
+        starUse.setAttribute('href', starData.def.id);
         
         // Apply Color and Opacity
         starUse.setAttribute('fill', starData.color);
