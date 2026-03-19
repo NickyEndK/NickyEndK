@@ -49,15 +49,10 @@ WOLF_PATHS.forEach(pathStr => {
     }
 });
 
-// Base scale on the smallest screen dimension so it always fits
-    const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
-    WOLF_SCALE = (minScreenDim * 0.5) / 110; 
-    
-    // Removed the strict clamp so it can scale infinitely with zoom
-    WOLF_SCALE = Math.max(0.5, WOLF_SCALE); 
-    
-    WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
-    WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
+// GLOBAL VARIABLES
+let WOLF_SCALE          = 0;
+let WOLF_PATTERN_WIDTH  = 0;
+let WOLF_PATTERN_HEIGHT = 0;
 
 const stars = [];
 let wolfOffset   = { x: 0, y: 0 };
@@ -72,9 +67,6 @@ function randomBetween(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-/**
- * OPTIMIZATION 1: Squared Distance Check (No Math.sqrt)
- */
 function overlaps(candidate, existingStar) {
     const dx = candidate.x - existingStar.x;
     const dy = candidate.y - existingStar.y;
@@ -92,8 +84,10 @@ function placeStars() {
     wolfRevealed = false;
     isDrawing = false;
     
-    WOLF_SCALE = (window.innerHeight * 0.6) / 110; 
-    WOLF_SCALE = Math.max(2.5, Math.min(WOLF_SCALE, 8)); 
+    // --- RESPONSIVE SCALING ---
+    const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
+    WOLF_SCALE = (minScreenDim * 0.5) / 110; 
+    WOLF_SCALE = Math.max(0.5, WOLF_SCALE); // Removed strict clamp 
     WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
     WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
     
@@ -104,26 +98,20 @@ function placeStars() {
     wolfOffset.x = randomBetween(margin, Math.max(margin, maxX));
     wolfOffset.y = randomBetween(margin, Math.max(margin, maxY));
 
-    // --- NEW: Random Rotation Math ---
-    // Generate a random angle between 0 and 360 degrees (in radians)
+    // --- ROTATION MATH ---
     const wolfAngle = randomBetween(0, Math.PI * 2);
-    
-    // Find the exact center of the constellation
     const centerX = WOLF_PATTERN_WIDTH / 2;
     const centerY = WOLF_PATTERN_HEIGHT / 2;
 
     WOLF_PATTERN.forEach((pt, idx) => {
         const size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE); // Wolf uses global sizes
         
-        // Find where the star normally sits relative to the top-left
         const px = pt.rx * WOLF_SCALE;
         const py = pt.ry * WOLF_SCALE;
 
-        // Calculate the distance from the center
         const dx = px - centerX;
         const dy = py - centerY;
         
-        // Orbit the point around the center using Trigonometry
         const rotatedX = dx * Math.cos(wolfAngle) - dy * Math.sin(wolfAngle);
         const rotatedY = dx * Math.sin(wolfAngle) + dy * Math.cos(wolfAngle);
 
@@ -132,7 +120,7 @@ function placeStars() {
             x:        wolfOffset.x + centerX + rotatedX,
             y:        wolfOffset.y + centerY + rotatedY,
             size:     size,
-            rotation: randomBetween(0, 360), // Rotates the physical star icon
+            rotation: randomBetween(0, 360),
             def:      pt.def,
             alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
             color:    '#ffffff',
@@ -168,18 +156,13 @@ function placeStars() {
     }
 }
 
-/**
- * OPTIMIZATION 2 & 3: DocumentFragment and SVG Groups (<g>)
- */
 function initDOM() {
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
     svg.setAttribute('width',  window.innerWidth);
     svg.setAttribute('height', window.innerHeight);
 
-    // 1. Create the invisible staging area
     const fragment = document.createDocumentFragment();
 
-    // 2. Create organized layer groups
     const bgGroup = document.createElementNS(SVG_NS, 'g');
     bgGroup.id = 'layer-background-stars';
 
@@ -189,7 +172,6 @@ function initDOM() {
     const wolfStarGroup = document.createElementNS(SVG_NS, 'g');
     wolfStarGroup.id = 'layer-wolf-stars';
 
-    // Append stars to the background group
     stars.forEach(starData => {
         const starUse = document.createElementNS(SVG_NS, 'use');
         starUse.setAttribute('href', starData.def.id);
@@ -200,7 +182,6 @@ function initDOM() {
         starData.element = starUse;
     });
 
-    // Append wolf stars to the wolf group
     wolfStarData.forEach(starData => {
         const starUse = document.createElementNS(SVG_NS, 'use');
         starUse.setAttribute('href',    starData.def.id);
@@ -211,7 +192,6 @@ function initDOM() {
         starData.element = starUse;
     });
 
-    // Append lines to the lines group
     WOLF_CONNECTIONS.forEach(([i, j]) => {
         const line = document.createElementNS(SVG_NS, 'line');
         const s1   = wolfStarData[i];
@@ -232,9 +212,8 @@ function initDOM() {
         wolfLines.push(line);
     });
 
-    // 3. Attach layers to fragment, then fragment to SVG (One single browser paint!)
     fragment.appendChild(bgGroup);
-    fragment.appendChild(lineGroup); // Lines go under the wolf stars
+    fragment.appendChild(lineGroup);
     fragment.appendChild(wolfStarGroup);
     
     svg.appendChild(fragment);
@@ -244,7 +223,6 @@ function updateStarTransform(element, data) {
     const scale = data.size / data.def.originalSize;
     const cx = data.def.originalSize / 2;
     const cy = data.def.originalSize / 2;
-    // Math.round limits excess decimal places to clean up the inline DOM text
     element.setAttribute(
         'transform', 
         `translate(${Math.round(data.x)}, ${Math.round(data.y)}) rotate(${Math.round(data.rotation)}) scale(${scale}) translate(${-cx}, ${-cy})`
@@ -299,7 +277,7 @@ function revealWolf() {
 }
 
 function animate() {
-    // ANIMATION FROZEN FOR NOW (per your request)
+    // ANIMATION FROZEN FOR NOW 
     // requestAnimationFrame(animate); 
 }
 
@@ -307,18 +285,14 @@ function init() {
     placeStars();
     initDOM();
 
-   // Click anywhere near the center of the wolf to reveal it
     svg.addEventListener('click', e => {
         if (wolfRevealed) return;
         
-        // Find the center of the wolf on the screen
         const cx = wolfOffset.x + WOLF_PATTERN_WIDTH / 2;
         const cy = wolfOffset.y + WOLF_PATTERN_HEIGHT / 2;
         
-        // Create a circular click radius (half the height of the pattern)
         const clickRadius = WOLF_PATTERN_HEIGHT / 2;
         
-        // Check if the click distance is inside the radius (using squared math for speed)
         const dx = e.clientX - cx;
         const dy = e.clientY - cy;
         
@@ -327,14 +301,17 @@ function init() {
         }
     });
 
-    // Start frozen animation loop
     animate();
 }
 
+let resizeTimeout;
 window.addEventListener('resize', () => {
-    svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
-    svg.setAttribute('width',  window.innerWidth);
-    svg.setAttribute('height', window.innerHeight);
+    clearTimeout(resizeTimeout);
+    
+    resizeTimeout = setTimeout(() => {
+        placeStars();
+        initDOM();
+    }, 200); 
 });
 
 console.log(`Number of stars generated: ${stars.length}`);
