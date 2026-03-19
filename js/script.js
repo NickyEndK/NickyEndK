@@ -75,8 +75,6 @@ const ANGEL_CONNECTIONS = [
     [17, 20], [20, 21]
 ];
 
-];
-
 const ANGEL_SCALE          = 3.5;  
 const ANGEL_STAR_SIZE      = 6;    
 const ANGEL_PATTERN_WIDTH  = 70 * ANGEL_SCALE; 
