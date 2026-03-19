@@ -8,8 +8,8 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * CONFIGURATION CONSTANTS
  */
 const STAR_COUNT      = 200;
-const STAR_MIN_SIZE   = 1;   // Increased slightly so they are easier to see
-const STAR_MAX_SIZE   = 3;
+const STAR_MIN_SIZE   = 5;   // Increased slightly so they are easier to see
+const STAR_MAX_SIZE   = 10;
 const OVERLAP_PADDING = 4;
 const MAX_ATTEMPTS    = 100;
 const MIN_ALPHA       = 0.2;
