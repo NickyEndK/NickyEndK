@@ -49,9 +49,15 @@ WOLF_PATHS.forEach(pathStr => {
     }
 });
 
-let WOLF_SCALE          = 3.8;
-let WOLF_PATTERN_WIDTH  = 0;
-let WOLF_PATTERN_HEIGHT = 0;
+// Base scale on the smallest screen dimension so it always fits
+    const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
+    WOLF_SCALE = (minScreenDim * 0.5) / 110; 
+    
+    // Removed the strict clamp so it can scale infinitely with zoom
+    WOLF_SCALE = Math.max(0.5, WOLF_SCALE); 
+    
+    WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
+    WOLF_PATTERN_HEIGHT = 110 * WOLF_SCALE;
 
 const stars = [];
 let wolfOffset   = { x: 0, y: 0 };
