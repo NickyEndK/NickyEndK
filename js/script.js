@@ -67,12 +67,13 @@ function randomBetween(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-function overlaps(candidate, existingStar) {
+// Added 'customPadding' so we can push background stars further away from the Wolf
+function overlaps(candidate, existingStar, customPadding = OVERLAP_PADDING) {
     const dx = candidate.x - existingStar.x;
     const dy = candidate.y - existingStar.y;
     const distanceSquared = (dx * dx) + (dy * dy); 
     
-    const minDist = (candidate.size / 2) + (existingStar.size / 2) + OVERLAP_PADDING;
+    const minDist = (candidate.size / 2) + (existingStar.size / 2) + customPadding;
     return distanceSquared < (minDist * minDist);
 }
 
@@ -84,7 +85,6 @@ function placeStars() {
     wolfRevealed = false;
     isDrawing = false;
     
-    // --- RESPONSIVE SCALING (RUNS ONLY ONCE) ---
     const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
     WOLF_SCALE = (minScreenDim * 0.5) / 110; 
     WOLF_SCALE = Math.max(0.5, WOLF_SCALE); 
@@ -98,7 +98,6 @@ function placeStars() {
     wolfOffset.x = randomBetween(margin, Math.max(margin, maxX));
     wolfOffset.y = randomBetween(margin, Math.max(margin, maxY));
 
-    // --- ROTATION MATH ---
     const wolfAngle = randomBetween(0, Math.PI * 2);
     const centerX = WOLF_PATTERN_WIDTH / 2;
     const centerY = WOLF_PATTERN_HEIGHT / 2;
@@ -146,7 +145,12 @@ function placeStars() {
             };
 
             const overlapsBackground = stars.some(existing => overlaps(candidate, existing));
-            const overlapsWolf = wolfStarData.some(existing => overlaps(candidate, existing));
+            
+            // --- ORGANIC CONTOUR CLEARING ---
+            // Tell background stars to stay at least 15 base-pixels away from any Wolf star.
+            // (You can increase '15' if you want a wider void around the shape)
+            const clearingBuffer = 15 * WOLF_SCALE; 
+            const overlapsWolf = wolfStarData.some(existing => overlaps(candidate, existing, clearingBuffer));
 
             if (!overlapsBackground && !overlapsWolf) {
                 stars.push(candidate);
@@ -304,10 +308,7 @@ function init() {
     animate();
 }
 
-// --- NEW, LAG-FREE RESIZE LISTENER ---
 window.addEventListener('resize', () => {
-    // ONLY updates the container boundaries so the background doesn't get cut off.
-    // It NO LONGER recalculates or redraws the stars.
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
     svg.setAttribute('width',  window.innerWidth);
     svg.setAttribute('height', window.innerHeight);
