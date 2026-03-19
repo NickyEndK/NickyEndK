@@ -78,7 +78,6 @@ function placeStars() {
             }
         }
     }
-}
 
 /**
  * INIT DOM: Creates the <use> elements (Runs only once)
