@@ -24,53 +24,54 @@ const starDefs =[
 // Notice: We map each star to its ID and its original grid size!
 // Refined coordinates (0-100) based on Angel.svg silhouette
 const ANGEL_PATTERN = [
-    // Hair & Head
-    { rx: 48, ry: 6,  def: starDefs[0] }, // 0: Top hair peak
-    { rx: 72, ry: 12, def: starDefs[1] }, // 1: Right hair high
-    { rx: 88, ry: 30, def: starDefs[2] }, // 2: Right hair low (behind)
-    { rx: 62, ry: 42, def: starDefs[3] }, // 3: Back of head/neck join
-    { rx: 22, ry: 30, def: starDefs[0] }, // 4: Left hair spike
-    { rx: 18, ry: 45, def: starDefs[1] }, // 5: Front face/mouth tip
-    { rx: 52, ry: 50, def: starDefs[2] }, // 6: Neck base
-    
-    // Bowtie
-    { rx: 52, ry: 54, def: starDefs[3] }, // 7: Bowtie center
-    { rx: 46, ry: 53, def: starDefs[0] }, // 8: Bowtie left
-    { rx: 58, ry: 53, def: starDefs[1] }, // 9: Bowtie right
-    
-    // Upper Arms (Long/High)
-    { rx: 48, ry: 62, def: starDefs[2] }, // 10: Upper Left Shoulder
-    { rx: 35, ry: 75, def: starDefs[3] }, // 11: Upper Left Elbow
-    { rx: 22, ry: 90, def: starDefs[0] }, // 12: Upper Left Hand
-    { rx: 64, ry: 62, def: starDefs[1] }, // 13: Upper Right Shoulder
-    { rx: 78, ry: 75, def: starDefs[2] }, // 14: Upper Right Elbow
-    { rx: 88, ry: 90, def: starDefs[3] }, // 15: Upper Right Hand
-
-    // Lower Arms & Waist
-    { rx: 54, ry: 78, def: starDefs[0] }, // 16: Waist
-    { rx: 50, ry: 70, def: starDefs[1] }, // 17: Lower Left Shoulder
-    { rx: 40, ry: 88, def: starDefs[2] }, // 18: Lower Left Elbow
-    { rx: 32, ry: 98, def: starDefs[3] }, // 19: Lower Left Hand
-    { rx: 58, ry: 70, def: starDefs[0] }, // 20: Lower Right Shoulder
-    { rx: 70, ry: 88, def: starDefs[1] }, // 21: Lower Right Elbow
-    { rx: 80, ry: 98, def: starDefs[2] }, // 22: Lower Right Hand
-
-    // Feet
-    { rx: 52, ry: 98, def: starDefs[3] }, // 23: Left Foot
-    { rx: 58, ry: 98, def: starDefs[0] }  // 24: Right Foot
+  // Head & Hair (top-left to top-right)
+  { rx: 42, ry: 8,  def: starDefs[0] }, // 0: Top of head / hair peak
+  { rx: 58, ry: 8,  def: starDefs[1] }, // 1: Right hair peak
+  { rx: 72, ry: 20, def: starDefs[2] }, // 2: Right temple
+  { rx: 68, ry: 32, def: starDefs[3] }, // 3: Right jawline
+  { rx: 50, ry: 40, def: starDefs[0] }, // 4: Chin
+  { rx: 32, ry: 32, def: starDefs[1] }, // 5: Left jawline
+  { rx: 28, ry: 20, def: starDefs[2] }, // 6: Left temple
+  // Neck & Torso
+  { rx: 50, ry: 50, def: starDefs[3] }, // 7: Neck base
+  { rx: 50, ry: 60, def: starDefs[0] }, // 8: Waist center
+  // Wings (left)
+  { rx: 20, ry: 30, def: starDefs[1] }, // 9: Left wing tip (upper)
+  { rx: 18, ry: 50, def: starDefs[2] }, //10: Left wing mid
+  { rx: 25, ry: 70, def: starDefs[3] }, //11: Left wing lower
+  { rx: 35, ry: 80, def: starDefs[0] }, //12: Left arm/hand
+  // Wings (right)
+  { rx: 80, ry: 30, def: starDefs[1] }, //13: Right wing tip (upper)
+  { rx: 82, ry: 50, def: starDefs[2] }, //14: Right wing mid
+  { rx: 75, ry: 70, def: starDefs[3] }, //15: Right wing lower
+  { rx: 65, ry: 80, def: starDefs[0] }, //16: Right arm/hand
+  // Body & Legs
+  { rx: 45, ry: 85, def: starDefs[1] }, //17: Left hip
+  { rx: 55, ry: 85, def: starDefs[2] }, //18: Right hip
+  { rx: 42, ry: 96, def: starDefs[3] }, //19: Left foot
+  { rx: 58, ry: 96, def: starDefs[0] }, //20: Right foot
+  // Optional: inner details (bowtie / chest)
+  { rx: 50, ry: 55, def: starDefs[1] }, //21: Chest center
+  { rx: 45, ry: 55, def: starDefs[2] }, //22: Left chest
+  { rx: 55, ry: 55, def: starDefs[3] }, //23: Right chest
+  { rx: 50, ry: 65, def: starDefs[0] }  //24: Navel / waist accent
 ];
 
 const ANGEL_CONNECTIONS = [
-    // Head Contour
-    [0, 1], [1, 2], [2, 3], [3, 6], [6, 5], [5, 4], [4, 0],
-    // Bowtie Details
-    [6, 7], [7, 8], [7, 9], [8, 9],
-    // Upper Arm Set
-    [10, 11], [11, 12], [13, 14], [14, 15],
-    // Lower Arm Set
-    [17, 18], [18, 19], [20, 21], [21, 22],
-    // Body & Legs
-    [6, 16], [16, 23], [16, 24]
+  // Head loop
+  [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 0],
+  // Neck → torso
+  [4, 7], [7, 8],
+  // Left wing/arm chain
+  [0, 9], [9, 10], [10, 11], [11, 12],
+  // Right wing/arm chain
+  [1, 13], [13, 14], [14, 15], [15, 16],
+  // Hips & legs
+  [8, 17], [8, 18], [17, 19], [18, 20],
+  // Chest detail
+  [7, 21], [21, 22], [ [22, 23],
+  // Optional navel link
+  [8, 24]
 ];
 
 const ANGEL_SCALE          = 3.8;  
