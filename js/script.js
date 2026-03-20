@@ -260,7 +260,6 @@ function revealWolf() {
 
     wolfStarData.forEach(s => {
         s.color = '#ffffff';
-        s.alpha = 1.0;
         s.element.setAttribute('fill', '#ffffff');
         s.element.setAttribute('opacity', '1');
     });
