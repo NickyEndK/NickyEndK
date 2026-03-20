@@ -105,7 +105,7 @@ function placeStars() {
     wolfOffset.x = randomBetween(margin, Math.max(margin, maxX));
     wolfOffset.y = randomBetween(margin, Math.max(margin, maxY));
 
-    const wolfAngle = randomBetween(0, Math.PI * 2);
+    const wolfAngle = randomBetween(-Math.PI / 2, Math.PI / 2);
     const centerX = WOLF_PATTERN_WIDTH / 2;
     const centerY = WOLF_PATTERN_HEIGHT / 2;
 
