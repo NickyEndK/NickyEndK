@@ -31,6 +31,21 @@ const WOLF_PATHS = [
   "M18.500,99.500 L31.500,57.500 L38.500,72.500 L26.500,84.500"
 ];
 
+function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+    // Vector from p1 to p2
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const l2 = dx * dx + dy * dy;
+    if (l2 === 0) return Math.hypot(px - x1, py - y1); // degenerate segment
+
+    // Project point onto line
+    const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2));
+    const projX = x1 + t * dx;
+    const projY = y1 + t * dy;
+
+    return Math.hypot(px - projX, py - projY);
+}
+
 const WOLF_PATTERN = [];
 const WOLF_CONNECTIONS = [];
 let globalNodeIndex = 0;
@@ -92,7 +107,6 @@ function placeStars() {
     isDrawing = false;
     
     const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
-    // Slightly increased scale to give the tight angel coords more room
     WOLF_SCALE = (minScreenDim * 0.75) / 110; 
     WOLF_SCALE = Math.max(0.5, WOLF_SCALE); 
     WOLF_PATTERN_WIDTH  = 80 * WOLF_SCALE;
@@ -123,7 +137,6 @@ function placeStars() {
 
         let size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
 
-        // Check against PREVIOUSLY placed angel stars and shrink if needed
         wolfStarData.forEach(existing => {
             size = getSafeSize(finalX, finalY, size, existing, 1.5);
         });
@@ -145,15 +158,30 @@ function placeStars() {
     for (let i = 0; i < STAR_COUNT; i++) {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             let size = randomBetween(STAR_MIN_SIZE, STAR_MAX_SIZE);
-            const x = randomBetween(size / 2, window.innerWidth  - size / 2);
+            const x = randomBetween(size / 2, window.innerWidth - size / 2);
             const y = randomBetween(size / 2, window.innerHeight - size / 2);
             
-            // A. Check against Angel Stars (using a slightly larger buffer for clarity)
-            wolfStarData.forEach(wolfStar => {
-                size = getSafeSize(x, y, size, wolfStar, 10 * WOLF_SCALE);
-            });
+            // --- NEW LOGIC: Check proximity to constellation ---
+            // A. Check against Angel Stars (joints) — use tighter buffer to preserve joints
+            const jointBuffer = 6 * WOLF_SCALE;
+            let tooClose = wolfStarData.some(wolfStar => 
+                Math.hypot(x - wolfStar.x, y - wolfStar.y) < jointBuffer
+            );
 
-            // B. Check against existing Background Stars
+            // B. Check against line segments — use slightly larger buffer for visual clarity
+            if (!tooClose) {
+                const lineBuffer = 8 * WOLF_SCALE;
+                tooClose = WOLF_CONNECTIONS.some(([i, j]) => {
+                    const s1 = wolfStarData[i];
+                    const s2 = wolfStarData[j];
+                    return pointToSegmentDistance(x, y, s1.x, s1.y, s2.x, s2.y) < lineBuffer;
+                });
+            }
+
+            if (tooClose) continue; // Skip this candidate star if too close to constellation
+
+            // --- ORIGINAL LOGIC: Check against other background stars ---
+            // Check against existing Background Stars
             let isOverlappingBG = false;
             for (const bgStar of stars) {
                 const dist = Math.hypot(x - bgStar.x, y - bgStar.y);
@@ -168,14 +196,14 @@ function placeStars() {
                     id: i,
                     x: x,
                     y: y,
-                    size:     size,
+                    size: size,
                     rotation: randomBetween(0, 360),
-                    def:      starDefs[Math.floor(Math.random() * starDefs.length)],
-                    alpha:    randomBetween(MIN_ALPHA, MAX_ALPHA),
-                    color:    '#ffffff',
-                    element:  null
+                    def: starDefs[Math.floor(Math.random() * starDefs.length)],
+                    alpha: randomBetween(MIN_ALPHA, MAX_ALPHA),
+                    color: '#ffffff',
+                    element: null
                 });
-                break;
+                break; // Successfully placed star, move to next one
             }
         }
     }
