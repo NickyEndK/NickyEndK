@@ -121,8 +121,8 @@ function placeStars(id) {
     });
 
     // 2. Background Stars with SCALED Buffers
-    const jointBuffer = 6 * CURRENT_SCALE;
-    const lineBuffer = 8 * CURRENT_SCALE;
+    const jointBuffer = 15; 
+    const lineBuffer = 20;
 
     for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
         for (let attempt = 0; attempt < CONFIG.MAX_STAR_PLACEMENT_ATTEMPTS; attempt++) {
