@@ -119,7 +119,7 @@ function placeStars(id) {
     isDrawing = false;
     svg.innerHTML = ''; // Clear the SVG canvas
 
-    const Math.min(window.innerWidth, window.innerHeight);
+    const minScreenDim = Math.min(window.innerWidth, window.innerHeight);
     // Use the specific scale from the constellation config, falling back to 1 if not defined
     const scaleMultiplier = config.scale !== undefined ? config.scale : 1;
     const baseScale = (minScreenDim * 0.75) / 110;
