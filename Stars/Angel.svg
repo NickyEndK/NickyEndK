@@ -5,7 +5,7 @@
         fill: #000;
         stroke: #fff;
         stroke-width: 1px;
-        fill-rule: evenodd;
+        fill-rule: 	nonzero;
       }
     </style>
   </defs>
