@@ -11,8 +11,8 @@ export const CONFIG = {
     LINE_OPACITY: 0.7,
     
     // Collision Thresholds (The "Void" Fixes)
-    LINE_BUFFER: 10,         // Space between lines and BG stars
-    STAR_BUFFER_CONST: 10,   // Space between constellation stars and BG stars
+    LINE_BUFFER: 500,         // Space between lines and BG stars
+    STAR_BUFFER_CONST: 500,   // Space between constellation stars and BG stars
     STAR_BUFFER_BG: 3,      // Space between individual BG stars
     
     MAX_PLACEMENT_ATTEMPTS: 100
