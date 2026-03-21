@@ -102,7 +102,7 @@ for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
             tooClose = constellationData.connections.some(([i1, i2]) => {
                 const s1 = constellationData.stars[i1];
                 const s2 = constellationData.stars[i2];
-                return pointToSegmentDistance(x, y, s1.x, s1.y, s2.x, s2.y) < 20;
+                return pointToSegmentDistance(x, y, s1.x, s1.y, s2.x, s2.y) < CONFIG.LINE_BUFFER;
             });
         }
 
