@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import { CONSTELLATIONS } from './constellations.js';
+import { STARS } from './stars.js';
 import { randomBetween, pointToSegmentDistance } from './mathUtils.js';
 
 const svg = document.getElementById('starfield');
@@ -12,9 +13,28 @@ let currentScale = 1;
 let isDrawing = false;
 let revealed = false;
 
+// Dynamically build the SVG defs from stars.js
+function injectDefs() {
+    let defs = svg.querySelector('defs');
+    if (!defs) {
+        defs = document.createElementNS(SVG_NS, 'defs');
+        svg.appendChild(defs);
+    }
+    STARS.forEach(star => {
+        if (!document.getElementById(star.id)) {
+            const g = document.createElementNS(SVG_NS, 'g');
+            g.setAttribute('id', star.id);
+            const path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('d', star.path);
+            g.appendChild(path);
+            defs.appendChild(g);
+        }
+    });
+}
+
 function createStarElement(data) {
     const use = document.createElementNS(SVG_NS, 'use');
-    use.setAttribute('href', data.def.id);
+    use.setAttribute('href', `#${data.def.id}`); 
     use.setAttribute('fill', '#ffffff');
     use.setAttribute('opacity', data.alpha);
     const scale = data.size / data.def.originalSize;
@@ -28,7 +48,11 @@ function placeStars(id) {
     constellationId = id;
     stars = [];
     constellationData = { stars: [], lines: [], connections: [] };
+    
+    // Clear SVG, but keep the defs we injected
+    const defs = svg.querySelector('defs');
     svg.innerHTML = '';
+    if (defs) svg.appendChild(defs);
 
     const minDim = Math.min(window.innerWidth, window.innerHeight);
     currentScale = (Math.max(0.5, (minDim * 0.75) / 110)) * (config.scale || 1);
@@ -42,7 +66,7 @@ function placeStars(id) {
             const startIdx = globalIdx;
             pairs.forEach((pair, localIdx) => {
                 const [rx, ry] = pair.split(',').map(Number);
-                patternPoints.push({ rx, ry, def: CONFIG.STAR_DEFS[Math.floor(Math.random() * CONFIG.STAR_DEFS.length)] });
+                patternPoints.push({ rx, ry, def: STARS[Math.floor(Math.random() * STARS.length)] });
                 if (localIdx > 0) constellationData.connections.push([globalIdx - 1, globalIdx]);
                 globalIdx++;
             });
@@ -80,7 +104,7 @@ function placeStars(id) {
             }
 
             if (!tooClose) {
-                stars.push({ x, y, size, rotation: randomBetween(0, 360), def: CONFIG.STAR_DEFS[Math.floor(Math.random() * CONFIG.STAR_DEFS.length)], alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA) });
+                stars.push({ x, y, size, rotation: randomBetween(0, 360), def: STARS[Math.floor(Math.random() * STARS.length)], alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA) });
                 break;
             }
         }
@@ -134,6 +158,7 @@ function reveal() {
 }
 
 // Start
+injectDefs();
 placeStars('wolf');
 initDOM();
 
@@ -143,4 +168,8 @@ svg.addEventListener('click', e => {
     if (hit) reveal();
 });
 
-window.addEventListener('resize', () => { placeStars('wolf'); initDOM(); });
+window.addEventListener('resize', () => { 
+    revealed = false; 
+    placeStars(constellationId); 
+    initDOM(); 
+});
