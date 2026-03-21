@@ -1,0 +1,10 @@
+export const CONFIG = {
+    STAR_COUNT: 200,
+    STAR_MIN_SIZE: 5,
+    STAR_MAX_SIZE: 10,
+    OVERLAP_PADDING: 4,
+    MAX_ATTEMPTS: 100,
+    MIN_ALPHA: 0.2,
+    MAX_ALPHA: 1.0,
+    TWINKLE_SPEED: 300
+};
