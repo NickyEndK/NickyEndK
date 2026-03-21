@@ -95,7 +95,7 @@ for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
         const y = randomBetween(size, window.innerHeight - size);
 
         // 1. Check against constellation stars
-        let tooClose = constellationData.stars.some(s => Math.hypot(x - s.x, y - s.y) < 15);
+        let tooClose = constellationData.stars.some(s => Math.hypot(x - s.x, y - s.y) < 5);
         
         // 2. Check against constellation lines
         if (!tooClose) {
@@ -109,7 +109,7 @@ for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
         // 3. NEW: Check against other already placed background stars
         if (!tooClose) {
             // Using a padding of 10 pixels, adjust this to your liking
-            tooClose = stars.some(s => Math.hypot(x - s.x, y - s.y) < 10); 
+            tooClose = stars.some(s => Math.hypot(x - s.x, y - s.y) < 3); 
         }
 
         if (!tooClose) {
