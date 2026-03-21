@@ -120,6 +120,7 @@ for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
                 alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA) 
             });
             break;
+            }
         }
     }
 }
