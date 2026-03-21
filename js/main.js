@@ -87,26 +87,39 @@ function placeStars(id) {
         });
     });
 
-    // 2. Generate Background Stars (Avoiding Constellation lines/points)
-    for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
-        for (let attempt = 0; attempt < CONFIG.MAX_STAR_PLACEMENT_ATTEMPTS; attempt++) {
-            const size = randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE);
-            const x = randomBetween(size, window.innerWidth - size);
-            const y = randomBetween(size, window.innerHeight - size);
+// 2. Generate Background Stars (Avoiding Constellation lines/points AND other stars)
+for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
+    for (let attempt = 0; attempt < CONFIG.MAX_STAR_PLACEMENT_ATTEMPTS; attempt++) {
+        const size = randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE);
+        const x = randomBetween(size, window.innerWidth - size);
+        const y = randomBetween(size, window.innerHeight - size);
 
-            let tooClose = constellationData.stars.some(s => Math.hypot(x - s.x, y - s.y) < 15);
-            if (!tooClose) {
-                tooClose = constellationData.connections.some(([i1, i2]) => {
-                    const s1 = constellationData.stars[i1];
-                    const s2 = constellationData.stars[i2];
-                    return pointToSegmentDistance(x, y, s1.x, s1.y, s2.x, s2.y) < 20;
-                });
-            }
+        // 1. Check against constellation stars
+        let tooClose = constellationData.stars.some(s => Math.hypot(x - s.x, y - s.y) < 15);
+        
+        // 2. Check against constellation lines
+        if (!tooClose) {
+            tooClose = constellationData.connections.some(([i1, i2]) => {
+                const s1 = constellationData.stars[i1];
+                const s2 = constellationData.stars[i2];
+                return pointToSegmentDistance(x, y, s1.x, s1.y, s2.x, s2.y) < 20;
+            });
+        }
 
-            if (!tooClose) {
-                stars.push({ x, y, size, rotation: randomBetween(0, 360), def: STARS[Math.floor(Math.random() * STARS.length)], alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA) });
-                break;
-            }
+        // 3. NEW: Check against other already placed background stars
+        if (!tooClose) {
+            // Using a padding of 10 pixels, adjust this to your liking
+            tooClose = stars.some(s => Math.hypot(x - s.x, y - s.y) < 10); 
+        }
+
+        if (!tooClose) {
+            stars.push({ 
+                x, y, size, 
+                rotation: randomBetween(0, 360), 
+                def: STARS[Math.floor(Math.random() * STARS.length)], 
+                alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA) 
+            });
+            break;
         }
     }
 }
