@@ -14,33 +14,28 @@ export function generateStarfield(constellationId, constellations, width, height
     const sin = Math.sin(angleRad);
 
     const zones = [
-        { x: [0.1, 0.2], y: [0.1, 0.2] }, // Top Left
-        { x: [0.7, 0.8], y: [0.1, 0.2] }, // Top Right
-        { x: [0.1, 0.2], y: [0.7, 0.8] }, // Bottom Left
-        { x: [0.7, 0.8], y: [0.7, 0.8] }, // Bottom Right
-        { x: [0.4, 0.5], y: [0.4, 0.5] }, // Center
-        { x: [0.6, 0.7], y: [0.4, 0.5] }  // Slight Right
+        { x: [0.1, 0.2], y: [0.1, 0.2] }, { x: [0.7, 0.8], y: [0.1, 0.2] },
+        { x: [0.1, 0.2], y: [0.7, 0.8] }, { x: [0.7, 0.8], y: [0.7, 0.8] },
+        { x: [0.4, 0.5], y: [0.4, 0.5] }, { x: [0.6, 0.7], y: [0.4, 0.5] }
     ];
     const zone = zones[Math.floor(Math.random() * zones.length)];
 
-    // 2. Scale and Position Constellation
     const minDim = Math.min(width, height);
     const scale = (Math.max(0.5, (minDim * 0.75) / 110)) * (config.scale || 1);
     const offX = width * randomBetween(zone.x[0], zone.x[1]);
     const offY = height * randomBetween(zone.y[0], zone.y[1]);
 
-    // Pivot points for the Wolf SVG (approx center)
     const centerX = 35; 
     const centerY = 50;
 
     let globalIdx = 0;
     config.paths.forEach(pathStr => {
-        const pairs = pathStr.match(/\d+\.\d+,\d+\.\d+/g);
+        // Fix: Improved regex to catch integers and decimals
+        const pairs = pathStr.match(/-?\d+\.?\d*,-?\d+\.?\d*/g);
         if (pairs) {
             pairs.forEach((pair, localIdx) => {
                 const [rx, ry] = pair.split(',').map(Number);
                 
-                // Translate to pivot, scale, then rotate
                 const tx = (rx - centerX) * scale;
                 const ty = (ry - centerY) * scale;
                 const rotatedX = tx * cos - ty * sin;
@@ -60,7 +55,6 @@ export function generateStarfield(constellationId, constellations, width, height
         }
     });
 
-    // 3. Generate Background Stars
     for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
         for (let attempt = 0; attempt < CONFIG.MAX_PLACEMENT_ATTEMPTS; attempt++) {
             const size = randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE);
@@ -88,6 +82,5 @@ export function generateStarfield(constellationId, constellations, width, height
             }
         }
     }
-
     return { constellationStars, backgroundStars, connections };
 }
