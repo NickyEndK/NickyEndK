@@ -23,8 +23,8 @@ export const CONFIG = {
     LINE_OPACITY: 0.7,
     
     // Fix: Lowered buffers to allow background stars to actually appear
-    LINE_BUFFER: 20,
-    STAR_BUFFER_CONST: 30,
+    LINE_BUFFER: 3,
+    STAR_BUFFER_CONST: 3,
     STAR_BUFFER_BG: 3,
     MAX_PLACEMENT_ATTEMPTS: 100
 };
