@@ -10,9 +10,7 @@ let isDrawing = false;
 let revealed = false;
 
 function init() {
-    // 1. Set background color from CONFIG
     document.body.style.backgroundColor = CONFIG.BG_COLOR;
-
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
     svg.innerHTML = '<defs></defs>';
     
@@ -76,7 +74,6 @@ function reveal() {
 }
 
 svg.addEventListener('click', e => {
-    // 2. Use CLICK_RADIUS from CONFIG
     const hit = currentData.constellationStars.some(s => 
         Math.hypot(e.clientX - s.x, e.clientY - s.y) < CONFIG.CLICK_RADIUS
     );
