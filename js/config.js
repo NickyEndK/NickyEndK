@@ -5,7 +5,7 @@ export const CONFIG = {
 
     // Fix: Added missing rotation values for the constellation
     CONSTELLATION_ROT_MIN: 0,
-    CONSTELLATION_ROT_MAX: 360,
+    CONSTELLATION_ROT_MAX: 45,
 
     CANVAS_PADDING: 50,
     CLICK_RADIUS: 20,
@@ -23,8 +23,8 @@ export const CONFIG = {
     LINE_OPACITY: 0.7,
     
     // Fix: Lowered buffers to allow background stars to actually appear
-    LINE_BUFFER: 6,
-    STAR_BUFFER_CONST: 6,
+    LINE_BUFFER: 8,
+    STAR_BUFFER_CONST: 8,
     STAR_BUFFER_BG: 3,
     MAX_PLACEMENT_ATTEMPTS: 100
 };
