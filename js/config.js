@@ -6,4 +6,5 @@ export const CONFIG = {
     MAX_ATTEMPTS: 100,
     MIN_ALPHA: 0.2,
     MAX_ALPHA: 1.0,
+    TWINKLE_SPEED: 300
 };
