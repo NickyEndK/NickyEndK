@@ -8,33 +8,66 @@ export function generateStarfield(constellationId, constellations, width, height
     const connections = [];
     const backgroundStars = [];
 
-    // 1. Scale and Position Constellation
+    // 1. Setup Rotation (-45 to 45 degrees)
+    const angleDeg = randomBetween(-45, 45);
+    const angleRad = angleDeg * (Math.PI / 180);
+    const cos = Math.cos(angleRad);
+    const sin = Math.sin(angleRad);
+
+    // 2. Define Placement Zones (Percentages of screen)
+    const zones = [
+        { x: [0.1, 0.2], y: [0.1, 0.2] }, // Top Left
+        { x: [0.7, 0.8], y: [0.1, 0.2] }, // Top Right
+        { x: [0.1, 0.2], y: [0.7, 0.8] }, // Bottom Left
+        { x: [0.7, 0.8], y: [0.7, 0.8] }, // Bottom Right
+        { x: [0.4, 0.5], y: [0.4, 0.5] }, // Center
+        { x: [0.6, 0.7], y: [0.4, 0.5] }  // Slight Right
+    ];
+    const zone = zones[Math.floor(Math.random() * zones.length)];
+
+    // 3. Scale and Position
     const minDim = Math.min(width, height);
     const scale = (Math.max(0.5, (minDim * 0.75) / 110)) * (config.scale || 1);
-    const offX = randomBetween(50, width - (80 * scale) - 50);
-    const offY = randomBetween(50, height - (110 * scale) - 50);
+    
+    // Pick actual pixel offset based on selected zone
+    const offX = width * randomBetween(zone.x[0], zone.x[1]);
+    const offY = height * randomBetween(zone.y[0], zone.y[1]);
+
+    // Approximate center of the Wolf SVG data to rotate around its own axis
+    const centerX = 35; 
+    const centerY = 50;
 
     let globalIdx = 0;
     config.paths.forEach(pathStr => {
         const pairs = pathStr.match(/\d+\.\d+,\d+\.\d+/g);
         if (pairs) {
             pairs.forEach((pair, localIdx) => {
-                const [rx, ry] = pair.split(',').map(Number);
+                const [rxRaw, ryRaw] = pair.split(',').map(Number);
+                
+                // Translate to origin (0,0) based on wolf center, then scale
+                const tx = (rxRaw - centerX) * scale;
+                const ty = (ryRaw - centerY) * scale;
+
+                // Apply 2D Rotation Matrix
+                const rotatedX = tx * cos - ty * sin;
+                const rotatedY = tx * sin + ty * cos;
+
                 constellationStars.push({
-                    x: offX + (rx * scale),
-                    y: offY + (ry * scale),
+                    x: offX + rotatedX,
+                    y: offY + rotatedY,
                     size: randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE),
                     rotation: randomBetween(0, 360),
                     def: STARS[Math.floor(Math.random() * STARS.length)],
                     alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA)
                 });
+                
                 if (localIdx > 0) connections.push([globalIdx - 1, globalIdx]);
                 globalIdx++;
             });
         }
     });
 
-    // 2. Generate Background Stars
+    // 4. Generate Background Stars (Logic remains same, using new constellation positions)
     for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
         for (let attempt = 0; attempt < CONFIG.MAX_PLACEMENT_ATTEMPTS; attempt++) {
             const size = randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE);
