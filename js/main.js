@@ -10,10 +10,12 @@ let isDrawing = false;
 let revealed = false;
 
 function init() {
+    // 1. Set background color from CONFIG
+    document.body.style.backgroundColor = CONFIG.BG_COLOR;
+
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
     svg.innerHTML = '<defs></defs>';
     
-    // Inject Defs
     const defs = svg.querySelector('defs');
     STARS.forEach(star => {
         const g = document.createElementNS("http://www.w3.org/2000/svg", 'g');
@@ -57,8 +59,16 @@ function reveal() {
 
         const animate = () => {
             prog += CONFIG.LINE_DRAW_SPEED;
-            if (prog >= 1) { l.setAttribute('x2', tx); l.setAttribute('y2', ty); idx++; drawNext(); }
-            else { l.setAttribute('x2', x1 + (tx - x1) * prog); l.setAttribute('y2', y1 + (ty - y1) * prog); requestAnimationFrame(animate); }
+            if (prog >= 1) { 
+                l.setAttribute('x2', tx); 
+                l.setAttribute('y2', ty); 
+                idx++; 
+                drawNext(); 
+            } else { 
+                l.setAttribute('x2', x1 + (tx - x1) * prog); 
+                l.setAttribute('y2', y1 + (ty - y1) * prog); 
+                requestAnimationFrame(animate); 
+            }
         };
         animate();
     };
@@ -66,7 +76,10 @@ function reveal() {
 }
 
 svg.addEventListener('click', e => {
-    const hit = currentData.constellationStars.some(s => Math.hypot(e.clientX - s.x, e.clientY - s.y) < 20);
+    // 2. Use CLICK_RADIUS from CONFIG
+    const hit = currentData.constellationStars.some(s => 
+        Math.hypot(e.clientX - s.x, e.clientY - s.y) < CONFIG.CLICK_RADIUS
+    );
     if (hit) reveal();
 });
 
