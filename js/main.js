@@ -11,9 +11,17 @@ let revealed = false;
 
 function init() {
     document.body.style.backgroundColor = CONFIG.BG_COLOR;
+    
+    // Nastavení pevného viewBoxu při prvním načtení. Určuje "vnitřní" rozlišení plátna.
     svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    
+    // Instrukce pro prohlížeč: Při změně velikosti okna zachovej poměr stran 
+    // a celý obsah přizpůsob oknu (chová se jako plynulý zoom/oddálení).
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    
     svg.innerHTML = '<defs></defs>';
     
+    // Příprava definic SVG tvarů hvězd pro pozdější znovupoužití (zvyšuje výkon).
     const defs = svg.querySelector('defs');
     STARS.forEach(star => {
         const g = document.createElementNS("http://www.w3.org/2000/svg", 'g');
@@ -24,8 +32,10 @@ function init() {
         defs.appendChild(g);
     });
 
+    // Získání vygenerovaných dat pro zadané souhvězdí.
     currentData = generateStarfield('wolf', CONSTELLATIONS, window.innerWidth, window.innerHeight);
     
+    // Vykreslení elementů do DocumentFragmentu před hromadným vložením do DOMu (zabraňuje překreslování).
     const frag = document.createDocumentFragment();
     const gLines = document.createElementNS("http://www.w3.org/2000/svg", 'g');
     
@@ -42,13 +52,18 @@ function init() {
     svg.appendChild(frag);
 }
 
+// Funkce pro postupnou animaci spojovacích čar souhvězdí.
 function reveal() {
     if (revealed || isDrawing) return;
     isDrawing = true;
     let idx = 0;
     
     const drawNext = () => {
-        if (idx >= currentData.lines.length) { revealed = true; isDrawing = false; return; }
+        if (idx >= currentData.lines.length) { 
+            revealed = true; 
+            isDrawing = false; 
+            return; 
+        }
         const l = currentData.lines[idx];
         l.setAttribute('opacity', CONFIG.LINE_OPACITY);
         let prog = 0;
@@ -73,12 +88,23 @@ function reveal() {
     drawNext();
 }
 
+// Detekce kliknutí v blízkosti bodu souhvězdí spouští animaci odhalení.
 svg.addEventListener('click', e => {
+    // Vzhledem k tomu, že se SVG při změně okna škáluje automaticky (zoomuje), 
+    // události myši se mapují rovnou na původní souřadnice viewBoxu.
+    
+    // Kód vytvoří transformační matici SVG, aby správně přepočítal kliknutí myši z pixelů obrazovky 
+    // do vnitřních koordinátů viewBoxu.
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+
     const hit = currentData.constellationStars.some(s => 
-        Math.hypot(e.clientX - s.x, e.clientY - s.y) < CONFIG.CLICK_RADIUS
+        Math.hypot(svgP.x - s.x, svgP.y - s.y) < CONFIG.CLICK_RADIUS
     );
     if (hit) reveal();
 });
 
-window.addEventListener('resize', () => { revealed = false; init(); });
+// Spuštění aplikace.
 init();
