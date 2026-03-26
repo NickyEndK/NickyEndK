@@ -1,3 +1,11 @@
+// generator.js
+// Generates all star and connection data for a given constellation.
+// Pure function — no DOM interaction, no side effects.
+//
+// Exports:
+//   generateStarfield(constellationId, constellations, width, height)
+//   → { constellationStars, backgroundStars, connections }
+
 import { CONFIG } from './config.js';
 import { STARS } from './stars.js';
 import { randomBetween, pointToSegmentDistance } from './mathUtils.js';
@@ -8,52 +16,54 @@ export function generateStarfield(constellationId, constellations, width, height
     const connections = [];
     const backgroundStars = [];
 
-    // 1. Nastavení úhlu rotace a celkového měřítka souhvězdí
+    // --- Phase 1: Rotation & scale setup ---
+    // Pick a random rotation angle and calculate a scale that fits ~75% of the smaller viewport dimension.
     const angleRad = randomBetween(CONFIG.CONSTELLATION_ROT_MIN, CONFIG.CONSTELLATION_ROT_MAX) * (Math.PI / 180);
     const cos = Math.cos(angleRad);
     const sin = Math.sin(angleRad);
 
     const minDim = Math.min(width, height);
     const scale = (Math.max(0.5, (minDim * 0.75) / 110)) * (config.scale || 1);
-    
-    // Výchozí střed souhvězdí, kolem kterého probíhá rotace
-    const centerX = 35; 
+
+    // The origin point in the constellation's local coordinate space to rotate around.
+    const centerX = 35;
     const centerY = 50;
 
     let localStars = [];
     let globalIdx = 0;
 
-    // FÁZE 1: Výpočet tvaru "nanečisto" v lokálních souřadnicích
-    // Zde se body pouze rotují a škálují, ještě se neumisťují na finální obrazovku.
+    // --- Phase 2: Parse paths into local (pre-offset) star positions ---
+    // Each path string contains "x,y" pairs. Every point becomes a star;
+    // consecutive points within a path are connected by a line.
     config.paths.forEach(pathStr => {
         const pairs = pathStr.match(/-?\d+\.?\d*,-?\d+\.?\d*/g);
         if (pairs) {
             pairs.forEach((pair, localIdx) => {
                 const [rx, ry] = pair.split(',').map(Number);
-                
+
+                // Translate to rotation origin, then rotate
                 const tx = (rx - centerX) * scale;
                 const ty = (ry - centerY) * scale;
-                
                 const rotatedX = tx * cos - ty * sin;
                 const rotatedY = tx * sin + ty * cos;
 
                 localStars.push({
                     localX: rotatedX,
                     localY: rotatedY,
-                    size: randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE),
+                    size:     randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE),
                     rotation: randomBetween(CONFIG.STAR_ROT_MIN, CONFIG.STAR_ROT_MAX),
-                    def: STARS[Math.floor(Math.random() * STARS.length)],
-                    alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA)
+                    def:      STARS[Math.floor(Math.random() * STARS.length)],
+                    alpha:    randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA)
                 });
-                
+
                 if (localIdx > 0) connections.push([globalIdx - 1, globalIdx]);
                 globalIdx++;
             });
         }
     });
 
-    // FÁZE 2: Detekce reálných rozměrů (Bounding Box)
-    // Projde všechny vypočítané body a najde nejkrajnější hodnoty, čímž zjistí skutečnou šířku a výšku tvaru.
+    // --- Phase 3: Bounding box detection ---
+    // Find the actual extents of the rotated/scaled shape in local space.
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     localStars.forEach(s => {
         if (s.localX < minX) minX = s.localX;
@@ -62,17 +72,16 @@ export function generateStarfield(constellationId, constellations, width, height
         if (s.localY > maxY) maxY = s.localY;
     });
 
-    // FÁZE 3: Výpočet bezpečné zóny pro umístění na obrazovku
-    // Odečte velikost souhvězdí a ochranný padding od okrajů okna.
+    // --- Phase 4: Safe placement zone ---
+    // Calculate the range of offsets that keep the constellation within CANVAS_PADDING of all edges.
     const padding = CONFIG.CANVAS_PADDING;
-    
+
     let minOffX = padding - minX;
     let maxOffX = (width - padding) - maxX;
-    
     let minOffY = padding - minY;
     let maxOffY = (height - padding) - maxY;
 
-    // Pokud je souhvězdí větší než samotné okno, vycentruje ho přesně doprostřed.
+    // If the constellation is larger than the viewport, just center it.
     if (minOffX > maxOffX) {
         minOffX = (width / 2) - ((minX + maxX) / 2);
         maxOffX = minOffX;
@@ -82,26 +91,30 @@ export function generateStarfield(constellationId, constellations, width, height
         maxOffY = minOffY;
     }
 
-    // Výběr jedné náhodné souřadnice uvnitř bezpečné zóny
+    // Pick one random position within the safe zone.
     const offX = randomBetween(minOffX, maxOffX);
     const offY = randomBetween(minOffY, maxOffY);
 
-    // FÁZE 4: Aplikování finální pozice
-    // Přičte vypočítaný bezpečný offset k lokálním bodům.
+    // --- Phase 5: Apply final position ---
+    // Add the safe offset to every local point to get screen coordinates.
     localStars.forEach(s => {
         constellationStars.push({
-            x: s.localX + offX,
-            y: s.localY + offY,
-            size: s.size,
+            x:        s.localX + offX,
+            y:        s.localY + offY,
+            size:     s.size,
             rotation: s.rotation,
-            def: s.def,
-            alpha: s.alpha
+            def:      s.def,
+            alpha:    s.alpha
         });
     });
 
-    // FÁZE 5: Rozmístění hvězd v pozadí
-    // Hledá náhodné pozice a kontroluje, zda nezasahují do souhvězdí, spojovacích čar nebo jiných hvězd.
-    for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
+    // --- Phase 6: Background star placement ---
+    // Scatter STAR_COUNT stars randomly, rejecting any that are too close to:
+    //   - a constellation star (STAR_BUFFER_CONST)
+    //   - a constellation line  (LINE_BUFFER)
+    //   - another background star (STAR_BUFFER_BG)
+    // Each star gets MAX_PLACEMENT_ATTEMPTS tries before being skipped.
+    for (let starIdx = 0; starIdx < CONFIG.STAR_COUNT; starIdx++) {
         for (let attempt = 0; attempt < CONFIG.MAX_PLACEMENT_ATTEMPTS; attempt++) {
             const size = randomBetween(CONFIG.STAR_MIN_SIZE, CONFIG.STAR_MAX_SIZE);
             const x = randomBetween(size, width - size);
@@ -109,8 +122,12 @@ export function generateStarfield(constellationId, constellations, width, height
 
             let tooClose = constellationStars.some(s => Math.hypot(x - s.x, y - s.y) < CONFIG.STAR_BUFFER_CONST);
             if (!tooClose) {
-                tooClose = connections.some(([i1, i2]) => {
-                    return pointToSegmentDistance(x, y, constellationStars[i1].x, constellationStars[i1].y, constellationStars[i2].x, constellationStars[i2].y) < CONFIG.LINE_BUFFER;
+                tooClose = connections.some(([fromIdx, toIdx]) => {
+                    return pointToSegmentDistance(
+                        x, y,
+                        constellationStars[fromIdx].x, constellationStars[fromIdx].y,
+                        constellationStars[toIdx].x,   constellationStars[toIdx].y
+                    ) < CONFIG.LINE_BUFFER;
                 });
             }
             if (!tooClose) {
@@ -118,16 +135,16 @@ export function generateStarfield(constellationId, constellations, width, height
             }
 
             if (!tooClose) {
-                backgroundStars.push({ 
-                    x, y, size, 
-                    rotation: randomBetween(CONFIG.STAR_ROT_MIN, CONFIG.STAR_ROT_MAX), 
-                    def: STARS[Math.floor(Math.random() * STARS.length)], 
-                    alpha: randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA) 
+                backgroundStars.push({
+                    x, y, size,
+                    rotation: randomBetween(CONFIG.STAR_ROT_MIN, CONFIG.STAR_ROT_MAX),
+                    def:      STARS[Math.floor(Math.random() * STARS.length)],
+                    alpha:    randomBetween(CONFIG.MIN_STAR_ALPHA, CONFIG.MAX_STAR_ALPHA)
                 });
                 break;
             }
         }
     }
-    
+
     return { constellationStars, backgroundStars, connections };
 }
