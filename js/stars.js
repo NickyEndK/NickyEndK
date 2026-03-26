@@ -1,3 +1,15 @@
+// stars.js
+// SVG path definitions for the 5 available star shapes.
+//
+// Fields:
+//   id           — unique SVG element id, used as <use href="#id">
+//   originalSize — the coordinate space the path was drawn in (all 100x100)
+//   path         — raw SVG path data
+//
+// Note: cx/cy (bounding box center) are NOT defined here.
+//       They are calculated automatically at runtime in main.js using getBBox()
+//       so new shapes never need manual measurement.
+
 export const STARS = [
     { id: 'star1', originalSize: 100, path: "M10,0 L13,7 L20,7 L14,11 L16,18 L10,14 L4,18 L6,11 L0,7 L7,7 Z" },
     { id: 'star2', originalSize: 100, path: "M49,96L41,68,22,53,34,33l19,3L62,8,83,46,59,52,52,72Z" },
