@@ -1,3 +1,12 @@
+// constellations.js
+// Constellation definitions. Each key is a constellation id used in generateStarfield().
+//
+// Fields per constellation:
+//   paths       — array of SVG polyline strings; each string is a chain of "x,y" points
+//                 representing one connected segment of the constellation.
+//                 Stars are placed at every point; lines connect consecutive points within a path.
+//   scale       — multiplier applied on top of the auto-calculated viewport scale (1 = default fit)
+
 export const CONSTELLATIONS = {
     wolf: {
         paths: [
@@ -9,6 +18,5 @@ export const CONSTELLATIONS = {
             "M18.500,99.500 L31.500,57.500 L38.500,72.500 L26.500,84.500"
         ],
         scale: 1,
-        clickBuffer: 15,
     }
 };
